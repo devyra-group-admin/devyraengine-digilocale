@@ -169,7 +169,7 @@ const App = () => {
 
         window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           attribution: '© OpenStreetMap contributors',
-          maxZoom: 19
+          maxZoom: 10
         }).addTo(map);
 
         mapInstanceRef.current = map;
