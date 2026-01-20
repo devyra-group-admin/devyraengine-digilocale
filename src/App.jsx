@@ -7,13 +7,13 @@ const App = () => {
   const [selectedPlace, setSelectedPlace] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [showBottomNav, setShowBottomNav] = useState(false);
-  const [mapCenter, setMapCenter] = useState([-25.4167, 30.1333]);
-  const [mapZoom, setMapZoom] = useState(14);
+  const [mapCenter, setMapCenter] = useState([-25.41682188170712, 30.10243602023188]);
+  const [mapZoom, setMapZoom] = useState(16.5);
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markersRef = useRef([]);
 
-  // Extended sample data 
+  // Extended sample data . Need to fix some locations and also add real pictures
   const places = [
     {
       id: 1,
@@ -21,7 +21,7 @@ const App = () => {
       category: "Food & Drink",
       description: "Popular pub and restaurant on the main street.",
       address: "Hugenote St, Dullstroom",
-      position: [-25.4167, 30.1333],
+      position: [-25.42392769985406, 30.10037451338561],
       image: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=300&fit=crop",
       featured: true
     },
@@ -31,7 +31,7 @@ const App = () => {
       category: "Food & Drink",
       description: "Cozy restaurant with local cuisine.",
       address: "Main Street, Dullstroom",
-      position: [-25.4170, 30.1320],
+      position: [-25.41545673927404, 30.107736413385332],
       image: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400&h=300&fit=crop"
     },
     {
@@ -40,7 +40,7 @@ const App = () => {
       category: "Accommodation",
       description: "Luxury lodge with scenic views.",
       address: "Dullstroom Area",
-      position: [-25.4150, 30.1350],
+      position: [-25.418347743222068, 30.109825753861376],
       image: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=300&fit=crop"
     },
     {
@@ -49,52 +49,58 @@ const App = () => {
       category: "Accommodation",
       description: "Historic inn in the heart of town.",
       address: "Central Dullstroom",
-      position: [-25.4165, 30.1340],
+      position: [-25.41494493857514, 30.10727345386131],
       image: "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=400&h=300&fit=crop"
     },
+    /* Do not have correct position and no position causes app to not load? 
     {
       id: 5,
       name: "Earth Gear",
       category: "Retail & Gifts",
       description: "Outdoor equipment and gifts.",
       address: "Shopping District",
-      position: [-25.4160, 30.1345],
+      position: [],
       image: "https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?w=400&h=300&fit=crop"
     },
+*/
     {
       id: 6,
       name: "Mavungana",
       category: "Accommodation",
       description: "Comfortable accommodation with mountain views.",
       address: "Dullstroom",
-      position: [-25.4175, 30.1315],
+      position: [-25.424415320795934, 30.10008468454961],
       image: "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=400&h=300&fit=crop"
     },
+    /*Need to find location
     {
       id: 7,
       name: "Kosmas Stationery & Gift",
       category: "Retail & Gifts",
       description: "Stationery and unique gift items.",
       address: "Main Street, Dullstroom",
-      position: [-25.4168, 30.1328],
+      position: [],
       image: "https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=400&h=300&fit=crop"
     },
+    */
+   /*
     {
       id: 8,
       name: "Birchcroft Preparatory School",
       category: "Tourism & Attractions",
       description: "Local educational institution.",
       address: "Dullstroom",
-      position: [-25.4155, 30.1360],
+      position: [],
       image: "https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=400&h=300&fit=crop"
     },
+    */
     {
       id: 9,
-      name: "Highlands Private School",
+      name: "The Best montessori School",
       category: "Tourism & Attractions",
       description: "Private school in the highlands.",
       address: "Dullstroom Area",
-      position: [-25.4180, 30.1370],
+      position: [-25.411059606266303, 30.101963360852068],
       image: "https://images.unsplash.com/photo-1509062522246-3755977927d7?w=400&h=300&fit=crop"
     },
     {
@@ -169,7 +175,7 @@ const App = () => {
 
         window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           attribution: '© OpenStreetMap contributors',
-          maxZoom: 10
+          maxZoom: 20
         }).addTo(map);
 
         mapInstanceRef.current = map;
