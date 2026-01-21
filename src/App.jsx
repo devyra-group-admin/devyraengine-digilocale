@@ -7,6 +7,7 @@ const App = () => {
   const [selectedPlace, setSelectedPlace] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [showBottomNav, setShowBottomNav] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [mapCenter, setMapCenter] = useState([-25.41682188170712, 30.10243602023188]);
   const [mapZoom, setMapZoom] = useState(16.5);
   const mapRef = useRef(null);
@@ -52,17 +53,17 @@ const App = () => {
       position: [-25.41494493857514, 30.10727345386131],
       image: "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=400&h=300&fit=crop"
     },
-    /* Do not have correct position and no position causes app to not load? 
+  
     {
       id: 5,
       name: "Earth Gear",
       category: "Retail & Gifts",
       description: "Outdoor equipment and gifts.",
       address: "Shopping District",
-      position: [],
+      position: [-25.413330763950693, 30.11013720528195],
       image: "https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?w=400&h=300&fit=crop"
     },
-*/
+
     {
       id: 6,
       name: "Mavungana",
@@ -72,31 +73,30 @@ const App = () => {
       position: [-25.424415320795934, 30.10008468454961],
       image: "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=400&h=300&fit=crop"
     },
-    /*Need to find location
+
     {
       id: 7,
       name: "Kosmas Stationery & Gift",
       category: "Retail & Gifts",
       description: "Stationery and unique gift items.",
       address: "Main Street, Dullstroom",
-      position: [],
+      position: [-25.412152156571196, 30.104644628018615],
       image: "https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=400&h=300&fit=crop"
     },
-    */
-   /*
+
+   
     {
       id: 8,
       name: "Birchcroft Preparatory School",
       category: "Tourism & Attractions",
       description: "Local educational institution.",
       address: "Dullstroom",
-      position: [],
+      position: [-25.41395311554934, 30.10588185006474],
       image: "https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=400&h=300&fit=crop"
     },
-    */
     {
       id: 9,
-      name: "The Best montessori School",
+      name: "The Montreo School",
       category: "Tourism & Attractions",
       description: "Private school in the highlands.",
       address: "Dullstroom Area",
@@ -109,7 +109,7 @@ const App = () => {
       category: "Property & Real Estate",
       description: "Legal services and property consultation.",
       address: "Dullstroom",
-      position: [-25.4162, 30.1335],
+      position: [-25.41535905346672, 30.106519790495973],
       image: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&h=300&fit=crop"
     },
     {
@@ -118,7 +118,7 @@ const App = () => {
       category: "Property & Real Estate",
       description: "Real estate services and property management.",
       address: "Dullstroom",
-      position: [-25.4172, 30.1342],
+      position: [-25.41526686131065, 30.10289628896996],
       image: "https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400&h=300&fit=crop"
     },
     {
@@ -127,7 +127,7 @@ const App = () => {
       category: "Outdoor & Adventure",
       description: "Experience farm life and outdoor activities.",
       address: "Dullstroom",
-      position: [-25.4145, 30.1380],
+      position: [-25.42142053247414, 30.103432158910046],
       image: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=400&h=300&fit=crop"
     }
   ];
@@ -197,7 +197,7 @@ const App = () => {
     if (mapInstanceRef.current) {
       updateMarkers();
     }
-  }, [selectedCategory, selectedPlace]);
+  }, [selectedCategory, selectedPlace, searchQuery]);
 
   const updateMarkers = () => {
     if (!mapInstanceRef.current || !window.L) return;
@@ -205,9 +205,15 @@ const App = () => {
     markersRef.current.forEach(marker => marker.remove());
     markersRef.current = [];
 
-    const placesToShow = selectedCategory 
-      ? places.filter(place => place.category === selectedCategory)
-      : places;
+    const placesToShow = places.filter(place => {
+      const matchesCategory = selectedCategory ? place.category === selectedCategory : true;
+      const matchesSearch = searchQuery 
+        ? place.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+          place.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          place.id.toString().includes(searchQuery)
+        : true;
+      return matchesCategory && matchesSearch;
+    });
 
     placesToShow.forEach(place => {
       const isSelected = selectedPlace && selectedPlace.id === place.id;
@@ -299,9 +305,15 @@ const App = () => {
     }
   };
 
-  const filteredPlaces = selectedCategory 
-    ? places.filter(place => place.category === selectedCategory)
-    : places;
+  const filteredPlaces = places.filter(place => {
+    const matchesCategory = selectedCategory ? place.category === selectedCategory : true;
+    const matchesSearch = searchQuery 
+      ? place.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        place.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        place.id.toString().includes(searchQuery)
+      : true;
+    return matchesCategory && matchesSearch;
+  });
 
   return (
     <div style={styles.container}>
@@ -317,6 +329,8 @@ const App = () => {
           <input 
             type="text" 
             placeholder="Search..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
             style={styles.searchInput}
           />
         </div>
@@ -383,9 +397,6 @@ const App = () => {
               onClick={() => setCategoryMenuOpen(true)}
             >
               <span style={styles.controlButtonText}>Categories</span>
-            </button>
-            <button style={styles.controlButton}>
-              <span style={styles.controlButtonText}>Filter</span>
             </button>
           </div>
 
@@ -524,15 +535,6 @@ const App = () => {
           )}
         </div>
 
-        {/* Toggle Sidebar Button (Mobile) */}
-        {!sidebarOpen && (
-          <button 
-            style={styles.toggleSidebarButton}
-            onClick={() => setSidebarOpen(true)}
-          >
-            <Menu size={24} />
-          </button>
-        )}
       </div>
 
       {/* Bottom Navigation Bar */}
@@ -542,7 +544,7 @@ const App = () => {
             style={styles.bottomNavOverlay}
             onClick={() => setShowBottomNav(false)}
           />
-          <div style={styles.bottomNav}>
+          <div style={{...styles.bottomNav, ...(showBottomNav ? styles.bottomNavOpen : {})}}>
             <div style={styles.bottomNavCategories}>
               {categories.map((cat, idx) => (
                 <button 
@@ -640,7 +642,8 @@ const styles = {
     border: '2px solid #d4c5a8',
     borderRadius: '8px',
     fontSize: 'clamp(14px, 3vw, 16px)',
-    backgroundColor: 'white'
+    backgroundColor: 'white',
+    color: '#333'
   },
   menuButton: {
     padding: '8px',
@@ -1043,16 +1046,22 @@ const styles = {
   },
   bottomNav: {
     position: 'fixed',
-    bottom: 0,
-    left: 0,
     right: 0,
+    top: 0,
+    bottom: 0,
+    width: '300px',
     backgroundColor: '#f5f3ed',
-    borderTop: '2px solid #d4c5a8',
-    boxShadow: '0 -2px 10px rgba(0,0,0,0.1)',
-    maxHeight: '60vh',
+    borderLeft: '2px solid #d4c5a8',
+    boxShadow: '-2px 0 10px rgba(0,0,0,0.1)',
+    maxHeight: '100vh',
     overflowY: 'auto',
     zIndex: 1002,
-    padding: '15px'
+    padding: '15px',
+    transform: 'translateX(100%)',
+    transition: 'transform 0.3s ease'
+  },
+  bottomNavOpen: {
+    transform: 'translateX(0)'
   },
   bottomNavCategories: {
     display: 'grid',
