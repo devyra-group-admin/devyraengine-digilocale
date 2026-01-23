@@ -7,6 +7,7 @@ const BusinessesSection = ({ searchQuery }) => {
   const mapInstanceRef = useRef(null);
   const markersRef = useRef([]);
   const [leafletLoaded, setLeafletLoaded] = useState(false);
+  const [showMobileMap, setShowMobileMap] = useState(false);
 
   // Business data
   const places = [
@@ -200,11 +201,11 @@ const BusinessesSection = ({ searchQuery }) => {
   }, [filteredPlaces, selectedBusiness]);
 
   return (
-    <div className="flex w-full h-full bg-gray-50">
+    <div className="flex flex-col md:flex-row w-full h-full bg-gray-50 relative">
       {/* Business List Sidebar */}
-      <div className="w-80 bg-white flex flex-col border-r border-gray-200 shadow-sm overflow-y-auto">
+      <div className={`w-full md:w-80 bg-white flex flex-col border-r border-gray-200 shadow-sm overflow-y-auto ${showMobileMap ? 'hidden md:flex' : 'flex'} h-full`}>
         <div className="p-5 border-b border-gray-100">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">Local Businesses</h2>
+          <h2 className="text-lg font-bold text-gray-900 mb-4 sticky top-0 bg-white z-10">Local Businesses</h2>
           <div className="space-y-3">
             {filteredPlaces.map((place) => (
               <div
@@ -216,27 +217,31 @@ const BusinessesSection = ({ searchQuery }) => {
                     : 'bg-white border border-gray-200 hover:bg-gray-50 hover:border-gray-300'
                 }`}
               >
-                <img
-                  src={place.photo}
-                  alt={place.name}
-                  className="w-full h-32 rounded-lg object-cover mb-3"
-                />
-                <h3 className="text-sm font-bold text-gray-900 mb-2">{place.name}</h3>
-                <div className="flex items-center space-x-2 mb-2">
-                  <div className="flex items-center space-x-1">
-                    {[...Array(5)].map((_, i) => (
-                      <Star 
-                        key={i} 
-                        size={12} 
-                        className={`${i < Math.floor(place.rating) ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
-                      />
-                    ))}
+                <div className="flex md:block space-x-4 md:space-x-0">
+                  <img
+                    src={place.photo}
+                    alt={place.name}
+                    className="w-24 h-24 md:w-full md:h-32 rounded-lg object-cover mb-0 md:mb-3 flex-shrink-0"
+                  />
+                  <div className="flex-1">
+                    <h3 className="text-sm font-bold text-gray-900 mb-1 md:mb-2">{place.name}</h3>
+                    <div className="flex items-center space-x-2 mb-2">
+                       <div className="flex items-center space-x-1">
+                        {[...Array(5)].map((_, i) => (
+                          <Star 
+                            key={i} 
+                            size={12} 
+                            className={`${i < Math.floor(place.rating) ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
+                          />
+                        ))}
+                      </div>
+                      <span className="text-xs text-gray-600 font-medium">
+                        {place.rating} ({place.reviews})
+                      </span>
+                    </div>
+                    <div className="text-xs text-gray-500">{place.category}</div>
                   </div>
-                  <span className="text-xs text-gray-600 font-medium">
-                    {place.rating} ({place.reviews})
-                  </span>
                 </div>
-                <div className="text-xs text-gray-500">{place.category}</div>
               </div>
             ))}
           </div>
@@ -244,11 +249,11 @@ const BusinessesSection = ({ searchQuery }) => {
       </div>
 
       {/* Map Center */}
-      <div className="flex-1 relative bg-gray-100 h-full">
+      <div className={`flex-1 relative bg-gray-100 h-full ${!showMobileMap ? 'hidden md:block' : 'block'}`}>
         <div ref={mapRef} className="w-full h-full" />
         
         {/* Map Controls */}
-        <div className="absolute top-5 right-5 flex flex-col space-y-2 z-[1000]">
+        <div className="absolute top-5 right-5 flex flex-col space-y-2 z-[400]">
           <button
             onClick={() => mapInstanceRef.current?.zoomIn()}
             className="p-3 bg-white rounded-lg shadow-lg hover:bg-gray-50 transition-colors"
@@ -262,6 +267,33 @@ const BusinessesSection = ({ searchQuery }) => {
             <ZoomOut size={20} />
           </button>
         </div>
+      </div>
+
+      {/* Mobile Toggle Button */}
+      <div className="md:hidden absolute bottom-6 left-1/2 transform -translate-x-1/2 z-[1000]">
+        <button
+          onClick={() => {
+             const newState = !showMobileMap;
+             setShowMobileMap(newState);
+             if (newState) {
+               // Trigger resize when switching to map
+               setTimeout(() => mapInstanceRef.current?.invalidateSize(), 150);
+             }
+          }}
+          className="bg-gray-900 text-white px-6 py-3 rounded-full shadow-xl flex items-center space-x-2 font-semibold hover:bg-gray-800 transition-colors border border-gray-700"
+        >
+          {showMobileMap ? (
+            <>
+              <span className="mr-2">📄</span>
+              <span>Show List</span>
+            </>
+          ) : (
+            <>
+              <MapPin size={18} />
+              <span>Show Map</span>
+            </>
+          )}
+        </button>
       </div>
 
       {/* Business Details Sidebar */}

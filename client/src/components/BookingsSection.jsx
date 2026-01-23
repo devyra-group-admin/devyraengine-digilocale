@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
+import { MapPin } from 'lucide-react';
 import AccommodationList from './AccommodationList';
 import AccommodationMap from './AccommodationMap';
 import AccommodationDetails from './AccommodationDetails';
@@ -22,6 +23,7 @@ const BookingsSection = ({
   const mapInstanceRef = useRef(null);
   const markersRef = useRef([]);
   const [leafletLoaded, setLeafletLoaded] = useState(false);
+  const [showMobileMap, setShowMobileMap] = useState(false);
 
   // Default map settings for Dullstroom
   const mapCenter = [-25.4175, 30.1544];
@@ -115,16 +117,18 @@ const BookingsSection = ({
   const onShowGuestSelectorToggle = () => setShowGuestSelector(prev => !prev);
 
   return (
-    <div className="flex w-full h-full bg-gray-50">
+    <div className="flex flex-col md:flex-row w-full h-full bg-gray-50 relative">
       {/* Accommodation List */}
-      <AccommodationList
-        accommodations={filteredAccommodations}
-        selectedAccommodation={selectedAccommodation}
-        onAccommodationSelect={onAccommodationSelect}
-      />
+      <div className={`w-full md:w-80 h-full border-r border-gray-200 overflow-y-auto z-10 ${showMobileMap ? 'hidden md:block' : 'block'}`}>
+        <AccommodationList
+          accommodations={filteredAccommodations}
+          selectedAccommodation={selectedAccommodation}
+          onAccommodationSelect={onAccommodationSelect}
+        />
+      </div>
       
       {/* Map (Right) */}
-      <div className="flex-1 relative bg-gray-100 min-h-0">
+      <div className={`flex-1 relative bg-gray-100 min-h-0 h-full ${!showMobileMap ? 'hidden md:block' : 'block'}`}>
         <AccommodationMap
           accommodations={filteredAccommodations}
           selectedAccommodation={selectedAccommodation}
@@ -133,6 +137,33 @@ const BookingsSection = ({
           mapInstanceRef={mapInstanceRef}
           markersRef={markersRef}
         />
+      </div>
+
+      {/* Mobile Toggle Button */}
+      <div className="md:hidden absolute bottom-6 left-1/2 transform -translate-x-1/2 z-[500]">
+        <button
+          onClick={() => {
+             const newState = !showMobileMap;
+             setShowMobileMap(newState);
+             if (newState) {
+               // Trigger resize when switching to map
+               setTimeout(() => mapInstanceRef.current?.invalidateSize(), 150);
+             }
+          }}
+          className="bg-gray-900 text-white px-6 py-3 rounded-full shadow-xl flex items-center space-x-2 font-semibold hover:bg-gray-800 transition-colors border border-gray-700"
+        >
+          {showMobileMap ? (
+            <>
+              <span className="mr-2">📄</span>
+              <span>Show List</span>
+            </>
+          ) : (
+            <>
+              <MapPin size={18} />
+              <span>Show Map</span>
+            </>
+          )}
+        </button>
       </div>
       
       {/* Booking Details Sidebar */}
