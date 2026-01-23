@@ -13,6 +13,14 @@ const AccommodationMap = ({
   
   // Update markers when accommodations or selection changes
   useEffect(() => {
+    if (mapInstanceRef.current) {
+      setTimeout(() => {
+        mapInstanceRef.current.invalidateSize();
+      }, 300);
+    }
+  }, [selectedAccommodation]);
+
+  useEffect(() => {
     if (!mapInstanceRef.current || !window.L || !accommodations) return;
 
     // Clear existing markers

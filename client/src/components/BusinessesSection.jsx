@@ -120,12 +120,7 @@ const BusinessesSection = ({ searchQuery }) => {
       mapInstanceRef.current = map;
       console.log('Map initialized successfully');
       
-      // Force map to invalidate size after a short delay
-      setTimeout(() => {
-        if (mapInstanceRef.current) {
-          mapInstanceRef.current.invalidateSize();
-        }
-      }, 100);
+
     } catch (error) {
       console.error('Error initializing map:', error);
     }
@@ -138,6 +133,15 @@ const BusinessesSection = ({ searchQuery }) => {
       }
     };
   }, [leafletLoaded]);
+
+  // Handle map resize when details panel toggles
+  useEffect(() => {
+    if (mapInstanceRef.current) {
+      setTimeout(() => {
+        mapInstanceRef.current.invalidateSize();
+      }, 300);
+    }
+  }, [selectedBusiness]);
 
   // Update markers
   useEffect(() => {
