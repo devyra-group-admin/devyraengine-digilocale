@@ -94,7 +94,7 @@ const AccommodationMap = ({
   };
 
   return (
-    <div className="flex-1 relative bg-gray-100">
+    <div className="w-full h-full relative bg-gray-100">
       <div
         ref={mapRef}
         className="w-full h-full"

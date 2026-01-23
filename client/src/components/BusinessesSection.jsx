@@ -235,8 +235,8 @@ const BusinessesSection = ({ searchQuery }) => {
       </div>
 
       {/* Map Center */}
-      <div className="flex-1 relative bg-gray-100" style={{ minHeight: '400px' }}>
-        <div ref={mapRef} className="w-full h-full" style={{ minHeight: '400px' }} />
+      <div className="flex-1 relative bg-gray-100 h-full">
+        <div ref={mapRef} className="w-full h-full" />
         
         {/* Map Controls */}
         <div className="absolute top-5 right-5 flex flex-col space-y-2 z-[1000]">

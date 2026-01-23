@@ -123,15 +123,17 @@ const BookingsSection = ({
         onAccommodationSelect={onAccommodationSelect}
       />
       
-      {/* Map */}
-      <AccommodationMap
-        accommodations={filteredAccommodations}
-        selectedAccommodation={selectedAccommodation}
-        onAccommodationSelect={onAccommodationSelect}
-        mapRef={mapRef}
-        mapInstanceRef={mapInstanceRef}
-        markersRef={markersRef}
-      />
+      {/* Map (Right) */}
+      <div className="flex-1 relative bg-gray-100 min-h-0">
+        <AccommodationMap
+          accommodations={filteredAccommodations}
+          selectedAccommodation={selectedAccommodation}
+          onAccommodationSelect={onAccommodationSelect}
+          mapRef={mapRef}
+          mapInstanceRef={mapInstanceRef}
+          markersRef={markersRef}
+        />
+      </div>
       
       {/* Booking Details Sidebar */}
       {selectedAccommodation && (
