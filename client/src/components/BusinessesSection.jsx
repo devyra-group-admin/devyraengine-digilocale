@@ -120,6 +120,11 @@ const BusinessesSection = ({ searchQuery }) => {
       mapInstanceRef.current = map;
       console.log('Map initialized successfully');
       
+      // Force map refresh
+      setTimeout(() => {
+        map.invalidateSize();
+      }, 200);
+      
 
     } catch (error) {
       console.error('Error initializing map:', error);
