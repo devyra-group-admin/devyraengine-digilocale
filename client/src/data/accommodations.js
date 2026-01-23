@@ -1,0 +1,86 @@
+// Accommodations data for the Dullstroom Digital app
+export const accommodations = [
+  {
+    id: 1,
+    name: "Lakefie Lodge",
+    category: "Premium Lodge",
+    rating: 4.9,
+    reviews: 87,
+    price: 2850,
+    priceUnit: "per night",
+    description:
+      "Luxury lakeside lodge with stunning mountain views and world-class amenities. Perfect for romantic getaways.",
+    address: "123 Riverside Rd, Dullstroom",
+    phone: "+27 13 456 7890",
+    website: "lakeflelodge.co.za",
+    position: [-25.41935, 30.08856],
+    images: [
+      "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=300&fit=crop",
+      "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=400&h=300&fit=crop",
+      "https://images.unsplash.com/photo-1564501049412-61c2a3083791?w=400&h=300&fit=crop",
+    ],
+    amenities: [
+      "Free WiFi",
+      "Breakfast Included",
+      "Lake View",
+      "Fireplace",
+      "Spa",
+    ],
+    maxGuests: 4,
+    checkInTime: "15:00",
+    checkOutTime: "11:00",
+  },
+  {
+    id: 2,
+    name: "Mountain View Cottage",
+    category: "Cozy Cottage",
+    rating: 4.7,
+    reviews: 124,
+    price: 1650,
+    priceUnit: "per night",
+    description:
+      "Charming cottage nestled in the mountains with breathtaking views and modern comforts.",
+    address: "45 Highland Road, Dullstroom",
+    phone: "+27 13 456 7891",
+    website: "mountaincottage.co.za",
+    position: [-25.42156, 30.10892],
+    images: [
+      "https://images.unsplash.com/photo-1505142468610-359e7d316be0?w=400&h=300&fit=crop",
+      "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400&h=300&fit=crop",
+    ],
+    amenities: ["Free WiFi", "Garden View", "BBQ Area", "Pet Friendly"],
+    maxGuests: 6,
+    checkInTime: "14:00",
+    checkOutTime: "10:00",
+  },
+  {
+    id: 3,
+    name: "Riverside Retreat",
+    category: "Boutique Hotel",
+    rating: 4.8,
+    reviews: 95,
+    price: 2200,
+    priceUnit: "per night",
+    description:
+      "Elegant riverside accommodation with luxury amenities and exceptional service.",
+    address: "78 River Lane, Dullstroom",
+    phone: "+27 13 456 7892",
+    website: "riversideretreat.co.za",
+    position: [-25.41789, 30.10234],
+    images: [
+      "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=400&h=300&fit=crop",
+      "https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?w=400&h=300&fit=crop",
+    ],
+    amenities: [
+      "Free WiFi",
+      "Restaurant",
+      "Room Service",
+      "Conference Facilities",
+    ],
+    maxGuests: 2,
+    checkInTime: "15:00",
+    checkOutTime: "12:00",
+  },
+];
+
+export default accommodations;
