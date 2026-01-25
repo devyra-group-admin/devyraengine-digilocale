@@ -38,7 +38,7 @@ const BookingsSection = ({
            accommodation.category.toLowerCase().includes(query);
   });
 
-  // Load Leaflet
+  // Load Leaflet with better error handling and detection
   useEffect(() => {
     if (typeof window.L !== 'undefined') {
       setLeafletLoaded(true);
@@ -47,31 +47,29 @@ const BookingsSection = ({
 
     const loadLeaflet = async () => {
       try {
-        // Check if already loaded
-        if (document.querySelector('link[href*="leaflet.css"]')) {
-          setLeafletLoaded(true);
-          return;
+        // Load CSS if not already loaded
+        if (!document.querySelector('link[href*="leaflet.css"]')) {
+          const leafletCss = document.createElement('link');
+          leafletCss.rel = 'stylesheet';
+          leafletCss.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+          document.head.appendChild(leafletCss);
         }
 
-        // Load Leaflet CSS
-        const leafletCss = document.createElement('link');
-        leafletCss.rel = 'stylesheet';
-        leafletCss.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-        document.head.appendChild(leafletCss);
-
-        // Check if script already exists
-        if (document.querySelector('script[src*="leaflet.js"]')) {
+        // Load JS if not already loaded
+        if (!document.querySelector('script[src*="leaflet.js"]') && typeof window.L === 'undefined') {
+          const leafletScript = document.createElement('script');
+          leafletScript.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+          leafletScript.onload = () => {
+            console.log('Leaflet loaded successfully');
+            setLeafletLoaded(true);
+          };
+          leafletScript.onerror = (error) => {
+            console.error('Failed to load Leaflet script:', error);
+          };
+          document.body.appendChild(leafletScript);
+        } else {
           setLeafletLoaded(true);
-          return;
         }
-
-        // Load Leaflet JS
-        const leafletScript = document.createElement('script');
-        leafletScript.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-        leafletScript.onload = () => {
-          setLeafletLoaded(true);
-        };
-        document.body.appendChild(leafletScript);
       } catch (error) {
         console.error('Error loading Leaflet:', error);
       }
@@ -82,20 +80,48 @@ const BookingsSection = ({
 
   // Initialize map when Leaflet is loaded and component mounts
   useEffect(() => {
-    if (!leafletLoaded || !mapRef.current || mapInstanceRef.current) return;
+    if (!leafletLoaded || !mapRef.current) return;
+
+    // Clean up existing map instance
+    if (mapInstanceRef.current) {
+      try {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+      } catch (error) {
+        console.error('Error cleaning up existing map:', error);
+      }
+    }
 
     try {
+      console.log('Initializing map with Leaflet...');
+      
       const map = window.L.map(mapRef.current, {
         center: mapCenter,
         zoom: mapZoom,
-        zoomControl: false
+        zoomControl: false,
+        preferCanvas: true
       });
 
+      // Add tile layer
       window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors'
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 18
       }).addTo(map);
 
       mapInstanceRef.current = map;
+      console.log('Map initialized successfully');
+
+      // Force resize after various delays to ensure proper sizing
+      const delays = [100, 300, 500, 1000];
+      delays.forEach(delay => {
+        setTimeout(() => {
+          if (mapInstanceRef.current) {
+            console.log(`Invalidating map size at ${delay}ms`);
+            mapInstanceRef.current.invalidateSize();
+          }
+        }, delay);
+      });
+
     } catch (error) {
       console.error('Error initializing map:', error);
     }
@@ -103,8 +129,12 @@ const BookingsSection = ({
     // Cleanup on unmount
     return () => {
       if (mapInstanceRef.current) {
-        mapInstanceRef.current.remove();
-        mapInstanceRef.current = null;
+        try {
+          mapInstanceRef.current.remove();
+          mapInstanceRef.current = null;
+        } catch (error) {
+          console.error('Error cleaning up map:', error);
+        }
       }
     };
   }, [leafletLoaded]);

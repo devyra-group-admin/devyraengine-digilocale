@@ -30,6 +30,22 @@ body {
   min-height: 100vh;
 }
 
+/* Leaflet map styles */
+.leaflet-container {
+  height: 100% !important;
+  width: 100% !important;
+  z-index: 1;
+}
+
+.leaflet-control-container .leaflet-top.leaflet-right {
+  display: none !important;
+}
+
+.custom-marker {
+  border: none !important;
+  background: transparent !important;
+}
+
 h1 {
   font-size: 3.2em;
   line-height: 1.1;

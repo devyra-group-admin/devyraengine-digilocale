@@ -66,31 +66,52 @@ const BusinessesSection = ({ searchQuery }) => {
   // Load Leaflet
   useEffect(() => {
     if (typeof window.L !== 'undefined') {
+      console.log('Leaflet already loaded');
       setLeafletLoaded(true);
       return;
     }
 
     const loadLeaflet = async () => {
       try {
-        if (document.querySelector('link[href*="leaflet.css"]')) {
-          setLeafletLoaded(true);
-          return;
+        // Load CSS if not already loaded
+        if (!document.querySelector('link[href*="leaflet.css"]')) {
+          const leafletCss = document.createElement('link');
+          leafletCss.rel = 'stylesheet';
+          leafletCss.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+          document.head.appendChild(leafletCss);
         }
 
-        const leafletCss = document.createElement('link');
-        leafletCss.rel = 'stylesheet';
-        leafletCss.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-        document.head.appendChild(leafletCss);
-
-        if (document.querySelector('script[src*="leaflet.js"]')) {
-          setLeafletLoaded(true);
-          return;
+        // Load JS if not already loaded
+        if (!document.querySelector('script[src*="leaflet.js"]')) {
+          const leafletScript = document.createElement('script');
+          leafletScript.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+          
+          // Wait for script to actually load and window.L to be available
+          leafletScript.onload = () => {
+            // Poll for window.L to be available
+            const checkLeaflet = setInterval(() => {
+              if (typeof window.L !== 'undefined') {
+                console.log('Leaflet loaded and available');
+                clearInterval(checkLeaflet);
+                setLeafletLoaded(true);
+              }
+            }, 50);
+            
+            // Timeout after 5 seconds
+            setTimeout(() => {
+              clearInterval(checkLeaflet);
+              if (typeof window.L === 'undefined') {
+                console.error('Leaflet failed to load after 5 seconds');
+              }
+            }, 5000);
+          };
+          
+          leafletScript.onerror = () => {
+            console.error('Failed to load Leaflet script');
+          };
+          
+          document.body.appendChild(leafletScript);
         }
-
-        const leafletScript = document.createElement('script');
-        leafletScript.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-        leafletScript.onload = () => setLeafletLoaded(true);
-        document.body.appendChild(leafletScript);
       } catch (error) {
         console.error('Error loading Leaflet:', error);
       }
@@ -121,11 +142,16 @@ const BusinessesSection = ({ searchQuery }) => {
       mapInstanceRef.current = map;
       console.log('Map initialized successfully');
       
-      // Force map refresh
-      setTimeout(() => {
-        map.invalidateSize();
-      }, 200);
-      
+      // Force resize after various delays to ensure proper sizing
+      const delays = [100, 300, 500, 1000];
+      delays.forEach(delay => {
+        setTimeout(() => {
+          if (mapInstanceRef.current) {
+            console.log(`Invalidating map size at ${delay}ms`);
+            mapInstanceRef.current.invalidateSize();
+          }
+        }, delay);
+      });
 
     } catch (error) {
       console.error('Error initializing map:', error);
@@ -139,6 +165,26 @@ const BusinessesSection = ({ searchQuery }) => {
       }
     };
   }, [leafletLoaded]);
+
+  // Add ResizeObserver to handle container size changes
+  useEffect(() => {
+    if (!mapRef.current || !mapInstanceRef.current) return;
+    
+    const resizeObserver = new ResizeObserver(() => {
+      if (mapInstanceRef.current) {
+        console.log('Map container resized, invalidating size');
+        setTimeout(() => {
+          mapInstanceRef.current?.invalidateSize();
+        }, 50);
+      }
+    });
+    
+    resizeObserver.observe(mapRef.current);
+    
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [mapInstanceRef.current]);
 
   // Handle map resize when details panel toggles
   useEffect(() => {
@@ -249,8 +295,8 @@ const BusinessesSection = ({ searchQuery }) => {
       </div>
 
       {/* Map Center */}
-      <div className={`flex-1 relative bg-gray-100 h-full ${!showMobileMap ? 'hidden md:block' : 'block'}`}>
-        <div ref={mapRef} className="w-full h-full" />
+      <div className={`flex-1 relative bg-gray-100 min-h-0 h-full ${!showMobileMap ? 'hidden md:block' : 'block'}`}>
+        <div ref={mapRef} className="absolute inset-0" style={{ minHeight: '300px' }} />
         
         {/* Map Controls */}
         <div className="absolute top-5 right-5 flex flex-col space-y-2 z-[400]">

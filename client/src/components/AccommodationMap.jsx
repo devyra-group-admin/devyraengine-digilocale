@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ZoomIn, ZoomOut } from 'lucide-react';
 
 const AccommodationMap = ({
@@ -9,7 +9,44 @@ const AccommodationMap = ({
   mapInstanceRef,
   markersRef
 }) => {
+  // Add loading state
+  const [isMapReady, setIsMapReady] = useState(false);
   
+  // Check if map is ready - watch for changes to map instance
+  useEffect(() => {
+    // Check periodically if map is initialized
+    const checkMapReady = () => {
+      if (mapInstanceRef.current && window.L) {
+        setIsMapReady(true);
+      }
+    };
+    
+    checkMapReady();
+    const interval = setInterval(checkMapReady, 100);
+    
+    return () => clearInterval(interval);
+  }, []);
+  
+  
+  // Add ResizeObserver to handle container size changes
+  useEffect(() => {
+    if (!mapRef.current || !mapInstanceRef.current) return;
+    
+    const resizeObserver = new ResizeObserver(() => {
+      if (mapInstanceRef.current && isMapReady) {
+        console.log('Map container resized, invalidating size');
+        setTimeout(() => {
+          mapInstanceRef.current?.invalidateSize();
+        }, 50);
+      }
+    });
+    
+    resizeObserver.observe(mapRef.current);
+    
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [isMapReady]);
   
   // Update markers when accommodations or selection changes
   useEffect(() => {
@@ -21,7 +58,9 @@ const AccommodationMap = ({
   }, [selectedAccommodation]);
 
   useEffect(() => {
-    if (!mapInstanceRef.current || !window.L || !accommodations) return;
+    if (!mapInstanceRef.current || !window.L || !accommodations || !isMapReady) return;
+
+    console.log('Adding markers to map for', accommodations.length, 'accommodations');
 
     // Clear existing markers
     if (markersRef.current && markersRef.current.length > 0) {
@@ -37,7 +76,12 @@ const AccommodationMap = ({
 
     // Add accommodation markers
     accommodations.forEach(accommodation => {
-      if (!accommodation.position) return;
+      if (!accommodation.position) {
+        console.warn('No position found for accommodation:', accommodation.name);
+        return;
+      }
+      
+      console.log('Adding marker for:', accommodation.name, 'at position:', accommodation.position);
       
       const isSelected = selectedAccommodation && selectedAccommodation.id === accommodation.id;
 
@@ -83,11 +127,14 @@ const AccommodationMap = ({
         });
 
         markersRef.current.push(marker);
+        console.log('Marker added successfully for:', accommodation.name);
       } catch (error) {
-        console.error('Error creating marker:', error);
+        console.error('Error creating marker for', accommodation.name, ':', error);
       }
     });
-  }, [accommodations, selectedAccommodation, onAccommodationSelect]);
+    
+    console.log('Total markers added:', markersRef.current.length);
+  }, [accommodations, selectedAccommodation, onAccommodationSelect, isMapReady]);
 
   const handleZoomIn = () => {
     if (mapInstanceRef.current) {
@@ -103,9 +150,19 @@ const AccommodationMap = ({
 
   return (
     <div className="w-full h-full relative bg-gray-100">
+      {!isMapReady && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 z-10">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading map...</p>
+          </div>
+        </div>
+      )}
+      
       <div
         ref={mapRef}
         className="w-full h-full"
+        style={{ minHeight: '300px' }}
       />
       
       {/* Map Controls */}

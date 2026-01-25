@@ -1,5 +1,5 @@
 // Force Rebuild 123
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Menu, MapPin, Star, Phone, Navigation, Globe, X, ZoomIn, ZoomOut, MessageCircle, ThumbsUp, MoreVertical, Plus, Calendar, ShoppingBag, Briefcase, AlertCircle, Fish, Wrench, Users } from 'lucide-react';
 import BookingsSection from './components/BookingsSection';
 import accommodations from './data/accommodations';
@@ -25,11 +25,7 @@ const App = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [bookingsSearchQuery, setBookingsSearchQuery] = useState('');
   const [communitySearchQuery, setCommunitySearchQuery] = useState('');
-  const mapRef = useRef(null);
-  
-  // Map and leaflet state
-  const mapInstanceRef = useRef(null);
-  const [leafletLoaded, setLeafletLoaded] = useState(false);
+  // Map handling moved to individual components
 
   // Default map settings
   const mapCenter = [-25.4175, 30.1544];
@@ -116,67 +112,9 @@ const App = () => {
     }
   }, []);
 
-  // Load Leaflet
-  useEffect(() => {
-    const loadLeaflet = async () => {
-      try {
-        // Load Leaflet CSS
-        const leafletCss = document.createElement('link');
-        leafletCss.rel = 'stylesheet';
-        leafletCss.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-        document.head.appendChild(leafletCss);
+  // Note: Leaflet loading is now handled in BookingsSection component
 
-        // Load Leaflet JS
-        const leafletScript = document.createElement('script');
-        leafletScript.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-        leafletScript.onload = () => {
-          setLeafletLoaded(true);
-        };
-        document.body.appendChild(leafletScript);
-      } catch (error) {
-        console.error('Error loading Leaflet:', error);
-      }
-    };
-
-    loadLeaflet();
-  }, []);
-
-  // Initialize map (only for businesses view)
-  useEffect(() => {
-    if (leafletLoaded && viewMode === 'businesses' && mapRef.current && !mapInstanceRef.current) {
-      try {
-        const map = window.L.map(mapRef.current, {
-          center: mapCenter,
-          zoom: mapZoom,
-          zoomControl: false
-        });
-
-        window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          attribution: '© OpenStreetMap contributors'
-        }).addTo(map);
-
-        // Add business markers
-        places.forEach(place => {
-          const marker = window.L.marker(place.position)
-            .addTo(map)
-            .bindPopup(`<b>${place.name}</b><br>${place.description}`)
-            .on('click', () => setSelectedBusiness(place));
-        });
-
-        mapInstanceRef.current = map;
-      } catch (error) {
-        console.error('Error initializing map:', error);
-      }
-    }
-  }, [leafletLoaded, viewMode]);
-
-  // Cleanup map when switching views
-  useEffect(() => {
-    if (viewMode !== 'businesses' && mapInstanceRef.current) {
-      mapInstanceRef.current.remove();
-      mapInstanceRef.current = null;
-    }
-  }, [viewMode]);
+  // Map handling is now done in individual view components
 
   const filteredPlaces = places.filter(place => {
     const matchesSearch = searchQuery 
