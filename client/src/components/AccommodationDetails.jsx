@@ -11,7 +11,8 @@ const AccommodationDetails = ({
   guests,
   onGuestsChange,
   showGuestSelector,
-  onShowGuestSelectorToggle
+  onShowGuestSelectorToggle,
+  onClose // Add onClose prop
 }) => {
   const [isEnquiryModalOpen, setIsEnquiryModalOpen] = useState(false);
   
@@ -24,7 +25,7 @@ const AccommodationDetails = ({
 
   return (
     <>
-      <div className="fixed md:relative bottom-0 md:bottom-auto left-0 md:left-auto right-0 md:right-auto w-full md:w-[400px] bg-white flex flex-col border-t md:border-t-0 md:border-l border-gray-200 shadow-2xl md:shadow-xl overflow-y-auto max-h-[85vh] md:max-h-none md:h-full z-[1000] md:z-20 font-sans rounded-t-3xl md:rounded-none">
+      <div className="fixed md:relative bottom-0 md:bottom-auto left-0 md:left-auto right-0 md:right-auto w-full md:w-[400px] bg-white flex flex-col border-t md:border-t-0 md:border-l border-gray-200 shadow-2xl md:shadow-xl overflow-y-auto max-h-[75vh] md:max-h-none md:h-full z-[1000] md:z-20 font-sans rounded-t-3xl md:rounded-none">
         {/* Mobile Drag Handle */}
         <div className="md:hidden flex justify-center pt-2 pb-1">
           <div className="w-12 h-1 bg-gray-300 rounded-full"></div>
@@ -38,8 +39,16 @@ const AccommodationDetails = ({
               alt={selectedAccommodation.name}
               className="w-full h-40 md:h-48 object-cover transform transition-transform duration-700 group-hover:scale-105"
             />
-            <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-lg text-xs font-bold text-gray-800 shadow-sm">
-              From R{selectedAccommodation.price}/night
+            <div className="absolute top-2 right-2 flex space-x-2">
+              <div className="bg-white/90 backdrop-blur-sm px-2 py-1 rounded-lg text-xs font-bold text-gray-800 shadow-sm">
+                From R{selectedAccommodation.price}/night
+              </div>
+              <button 
+                onClick={onClose}
+                className="md:hidden bg-white/90 backdrop-blur-sm p-1.5 rounded-full text-gray-600 shadow-sm active:scale-95 transition-transform"
+              >
+                <X size={18} />
+              </button>
             </div>
           </div>
           

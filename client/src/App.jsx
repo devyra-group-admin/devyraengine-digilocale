@@ -312,7 +312,7 @@ const App = () => {
           <div className={`p-1 rounded-lg ${viewMode === 'businesses' ? 'bg-green-50' : ''}`}>
              <ShoppingBag size={20} className={viewMode === 'businesses' ? 'fill-green-800/10' : ''} />
           </div>
-          <span className="text-[10px] font-bold uppercase tracking-tighter">Explore</span>
+          <span className="text-[10px] font-bold uppercase tracking-tighter">Businesses</span>
         </button>
         
         <button 
@@ -322,7 +322,7 @@ const App = () => {
           <div className={`p-1 rounded-lg ${viewMode === 'community' ? 'bg-green-50' : ''}`}>
              <Users size={20} className={viewMode === 'community' ? 'fill-green-800/10' : ''} />
           </div>
-          <span className="text-[10px] font-bold uppercase tracking-tighter">Circle</span>
+          <span className="text-[10px] font-bold uppercase tracking-tighter">Community</span>
         </button>
         
         <button 
@@ -332,7 +332,7 @@ const App = () => {
           <div className={`p-1 rounded-lg ${viewMode === 'bookings' ? 'bg-green-50' : ''}`}>
              <Calendar size={20} className={viewMode === 'bookings' ? 'fill-green-800/10' : ''} />
           </div>
-          <span className="text-[10px] font-bold uppercase tracking-tighter">Stay</span>
+          <span className="text-[10px] font-bold uppercase tracking-tighter">Bookings</span>
         </button>
         
         <button 

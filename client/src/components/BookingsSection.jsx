@@ -208,6 +208,7 @@ const BookingsSection = ({
           onGuestsChange={onGuestsChange}
           showGuestSelector={showGuestSelector}
           onShowGuestSelectorToggle={onShowGuestSelectorToggle}
+          onClose={() => setSelectedAccommodation(null)}
         />
       )}
     </div>
