@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MapPin, Phone, Star, AlertCircle, Check, Users, Calendar } from 'lucide-react';
+import { MapPin, Phone, Star, AlertCircle, Check, Users, Calendar, X } from 'lucide-react';
 import BookingEnquiryModal from './BookingEnquiryModal';
 
 const AccommodationDetails = ({
