@@ -241,6 +241,14 @@ img {
   }
 }
 
+.animate-slideInFromBottom {
+  animation: slideInFromBottom 0.3s ease-out;
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out;
+}
+
 @keyframes spin {
   from {
     transform: rotate(0deg);

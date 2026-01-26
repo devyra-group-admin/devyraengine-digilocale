@@ -135,8 +135,11 @@ const BusinessesSection = ({ searchQuery }) => {
         zoomControl: false
       });
 
-      window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors'
+      // Add tile layer - CartoDB Voyager is cleaner and looks more premium
+      window.L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        attribution: '© OpenStreetMap contributors © CARTO',
+        subdomains: 'abcd',
+        maxZoom: 20
       }).addTo(map);
 
       mapInstanceRef.current = map;
@@ -147,7 +150,6 @@ const BusinessesSection = ({ searchQuery }) => {
       delays.forEach(delay => {
         setTimeout(() => {
           if (mapInstanceRef.current) {
-            console.log(`Invalidating map size at ${delay}ms`);
             mapInstanceRef.current.invalidateSize();
           }
         }, delay);
@@ -159,7 +161,6 @@ const BusinessesSection = ({ searchQuery }) => {
 
     return () => {
       if (mapInstanceRef.current) {
-        console.log('Cleaning up map');
         mapInstanceRef.current.remove();
         mapInstanceRef.current = null;
       }
@@ -172,7 +173,6 @@ const BusinessesSection = ({ searchQuery }) => {
     
     const resizeObserver = new ResizeObserver(() => {
       if (mapInstanceRef.current) {
-        console.log('Map container resized, invalidating size');
         setTimeout(() => {
           mapInstanceRef.current?.invalidateSize();
         }, 50);
@@ -207,43 +207,61 @@ const BusinessesSection = ({ searchQuery }) => {
     filteredPlaces.forEach(place => {
       const isSelected = selectedBusiness?.id === place.id;
       
+      // Get emoji based on category
+      const getEmoji = (cat) => {
+        if (cat.includes('Restaurant')) return '🍽️';
+        if (cat.includes('Art')) return '🎨';
+        if (cat.includes('Activities')) return '🎯';
+        return '🏪';
+      };
+
       const iconHtml = `
-        <div style="
-          background-color: ${isSelected ? '#0d9488' : 'white'};
-          border: 3px solid #0d9488;
+        <div class="business-marker ${isSelected ? 'selected' : ''}" style="
+          background-color: ${isSelected ? '#065f46' : 'white'};
+          color: ${isSelected ? 'white' : '#111827'};
+          padding: 6px;
           border-radius: 50%;
-          width: 32px;
-          height: 32px;
+          border: 2px solid ${isSelected ? '#065f46' : '#e5e7eb'};
+          font-size: 18px;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
           display: flex;
           align-items: center;
           justify-content: center;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-          transform: ${isSelected ? 'scale(1.3)' : 'scale(1)'};
-          transition: all 200ms ease;
-          cursor: pointer;
+          width: 36px;
+          height: 36px;
+          transform: ${isSelected ? 'scale(1.2) translateY(-4px)' : 'scale(1)'};
         ">
-          <span style="
-            color: ${isSelected ? 'white' : '#0d9488'};
-            font-size: 16px;
-          ">📍</span>
+          ${getEmoji(place.category)}
         </div>`;
 
       const marker = window.L.marker(place.position, {
         icon: window.L.divIcon({
           html: iconHtml,
-          className: 'custom-marker',
-          iconSize: [32, 32],
-          iconAnchor: [16, 16]
+          className: 'business-div-marker',
+          iconSize: [36, 36],
+          iconAnchor: [18, 18]
         })
       }).addTo(mapInstanceRef.current);
 
       marker.on('click', () => {
         setSelectedBusiness(place);
-        mapInstanceRef.current.setView(place.position, 16, { animate: true });
+        if (mapInstanceRef.current) {
+          mapInstanceRef.current.flyTo(place.position, 16, {
+            duration: 1.5,
+            easeLinearity: 0.25
+          });
+        }
       });
 
       markersRef.current.push(marker);
     });
+
+    // Fit bounds if no business selected
+    if (!selectedBusiness && filteredPlaces.length > 0 && mapInstanceRef.current) {
+      const bounds = window.L.latLngBounds(filteredPlaces.map(p => p.position));
+      mapInstanceRef.current.fitBounds(bounds, { padding: [50, 50], animate: true });
+    }
   }, [filteredPlaces, selectedBusiness]);
 
   return (
@@ -344,7 +362,7 @@ const BusinessesSection = ({ searchQuery }) => {
 
       {/* Business Details Sidebar - Responsive Bottom Sheet / Panel */}
       {selectedBusiness && (
-        <div className="fixed md:relative bottom-0 md:bottom-auto left-0 md:left-auto right-0 md:right-auto w-full md:w-[400px] bg-white flex flex-col border-t md:border-t-0 md:border-l border-gray-200 shadow-2xl md:shadow-xl overflow-y-auto max-h-[85vh] md:max-h-none md:h-full z-[3000] md:z-20 font-sans rounded-t-3xl md:rounded-none">
+        <div className="fixed md:relative bottom-0 md:bottom-auto left-0 md:left-auto right-0 md:right-auto w-full md:w-[400px] bg-white flex flex-col border-t md:border-t-0 md:border-l border-gray-200 shadow-2xl md:shadow-xl overflow-y-auto max-h-[75vh] md:max-h-none md:h-full z-[3000] md:z-20 font-sans rounded-t-3xl md:rounded-none animate-slideInFromBottom">
           {/* Mobile Drag Handle */}
           <div className="md:hidden flex justify-center pt-2 pb-1">
             <div className="w-12 h-1 bg-gray-300 rounded-full"></div>
@@ -353,12 +371,14 @@ const BusinessesSection = ({ searchQuery }) => {
           <div className="p-4 md:p-5 border-b border-gray-100">
             <div className="flex justify-between items-start mb-4">
               <h2 className="text-xl md:text-2xl font-bold text-gray-900 leading-tight">{selectedBusiness.name}</h2>
-              <button 
-                onClick={() => setSelectedBusiness(null)}
-                className="text-gray-400 hover:text-gray-600 transition-colors bg-gray-50 p-1 rounded-full"
-              >
-                <X size={20} className="md:w-6 md:h-6" />
-              </button>
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => setSelectedBusiness(null)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors bg-gray-50 p-1.5 rounded-full shadow-sm"
+                >
+                  <X size={20} className="md:w-6 md:h-6" />
+                </button>
+              </div>
             </div>
             
             <img 

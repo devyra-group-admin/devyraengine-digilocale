@@ -76,64 +76,63 @@ const AccommodationMap = ({
 
     // Add accommodation markers
     accommodations.forEach(accommodation => {
-      if (!accommodation.position) {
-        console.warn('No position found for accommodation:', accommodation.name);
-        return;
-      }
-      
-      console.log('Adding marker for:', accommodation.name, 'at position:', accommodation.position);
+      if (!accommodation.position) return;
       
       const isSelected = selectedAccommodation && selectedAccommodation.id === accommodation.id;
 
       const iconHtml = `
-        <div style="
-          background-color: ${isSelected ? '#0d9488' : 'white'};
-          border: 3px solid #0d9488;
-          border-radius: 50%;
-          width: 32px;
-          height: 32px;
+        <div class="price-marker ${isSelected ? 'selected' : ''}" style="
+          background-color: ${isSelected ? '#065f46' : 'white'};
+          color: ${isSelected ? 'white' : '#111827'};
+          padding: 4px 8px;
+          border-radius: 20px;
+          border: 1px solid ${isSelected ? '#065f46' : '#e5e7eb'};
+          font-weight: 800;
+          font-size: 13px;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+          white-space: nowrap;
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
           display: flex;
           align-items: center;
-          justify-content: center;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-          transform: ${isSelected ? 'scale(1.3)' : 'scale(1)'};
-          transition: all 200ms ease;
-          cursor: pointer;
+          gap: 4px;
         ">
-          <span style="
-            color: ${isSelected ? 'white' : '#0d9488'};
-            font-size: 16px;
-            font-weight: bold;
-          ">🏨</span>
+          R${accommodation.price}
         </div>`;
 
       try {
         const marker = window.L.marker(accommodation.position, {
           icon: window.L.divIcon({
             html: iconHtml,
-            className: 'custom-marker',
-            iconSize: [32, 32],
-            iconAnchor: [16, 16]
+            className: 'price-tag-marker',
+            iconSize: [60, 24],
+            iconAnchor: [30, 12]
           })
         }).addTo(mapInstanceRef.current);
 
         marker.on('click', (e) => {
           e.originalEvent?.stopPropagation();
           onAccommodationSelect(accommodation);
-          // Center map on selected accommodation
+          
           if (mapInstanceRef.current) {
-            mapInstanceRef.current.setView(accommodation.position, 16, { animate: true });
+            // Smoothly pan and zoom to the location
+            mapInstanceRef.current.flyTo(accommodation.position, 15, {
+              duration: 1.5,
+              easeLinearity: 0.25
+            });
           }
         });
 
         markersRef.current.push(marker);
-        console.log('Marker added successfully for:', accommodation.name);
       } catch (error) {
-        console.error('Error creating marker for', accommodation.name, ':', error);
+        console.error('Error creating marker:', error);
       }
     });
-    
-    console.log('Total markers added:', markersRef.current.length);
+
+    // Automatically fit all markers within view if no accommodation is selected
+    if (!selectedAccommodation && accommodations.length > 0 && mapInstanceRef.current) {
+      const bounds = window.L.latLngBounds(accommodations.map(a => a.position));
+      mapInstanceRef.current.fitBounds(bounds, { padding: [50, 50], animate: true });
+    }
   }, [accommodations, selectedAccommodation, onAccommodationSelect, isMapReady]);
 
   const handleZoomIn = () => {
