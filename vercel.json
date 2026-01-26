@@ -8,9 +8,7 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "framework": "vite",
-  "build": {
-    "src": "package.json",
-    "use": "@vercel/static-build",
-    "config": { "distDir": "dist" }
-  }
+  "buildCommand": "npm run vercel-build",
+  "outputDirectory": "client/dist",
+  "installCommand": "npm install"
 }
