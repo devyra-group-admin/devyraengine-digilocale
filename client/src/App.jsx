@@ -309,7 +309,7 @@ const App = () => {
       </div>
 
       {/* Mobile Bottom Navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-6 py-3 flex justify-between items-center z-[2000] shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-6 py-3 flex justify-between items-center z-[4000] shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
         <button 
           onClick={() => setViewMode('businesses')}
           className={`flex flex-col items-center gap-1 ${viewMode === 'businesses' ? 'text-green-800' : 'text-gray-400'}`}
