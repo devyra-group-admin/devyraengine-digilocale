@@ -273,7 +273,10 @@ const BusinessesSection = ({ searchQuery, showMobileMap, setShowMobileMap }) => 
             {filteredPlaces.map((place) => (
               <div
                 key={place.id}
-                onClick={() => setSelectedBusiness(place)}
+                onClick={() => {
+                  setSelectedBusiness(place);
+                  setShowMobileMap(true); // Switch to map view on mobile
+                }}
                 className={`p-4 rounded-xl cursor-pointer transition-all duration-200 ${
                   selectedBusiness?.id === place.id 
                     ? 'bg-teal-50 border-2 border-teal-500 shadow-md' 

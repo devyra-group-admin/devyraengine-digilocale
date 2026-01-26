@@ -142,7 +142,10 @@ const BookingsSection = ({
   }, [leafletLoaded]);
 
   // Handlers
-  const onAccommodationSelect = setSelectedAccommodation;
+  const onAccommodationSelect = (accommodation) => {
+    setSelectedAccommodation(accommodation);
+    setShowMobileMap(true); // Switch to map view on mobile
+  };
   const onCheckInDateChange = setCheckInDate;
   const onCheckOutDateChange = setCheckOutDate;
   const onGuestsChange = setGuests;
