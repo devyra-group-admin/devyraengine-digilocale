@@ -334,7 +334,7 @@ const BusinessesSection = ({ searchQuery, showMobileMap, setShowMobileMap }) => 
       
       {/* Business Details Sidebar - Responsive Bottom Sheet / Panel */}
       {selectedBusiness && (
-        <div className="fixed md:relative bottom-0 md:bottom-auto left-0 md:left-auto right-0 md:right-auto w-full md:w-[400px] bg-white flex flex-col border-t md:border-t-0 md:border-l border-gray-200 shadow-2xl md:shadow-xl overflow-y-auto max-h-[75vh] md:max-h-none md:h-full z-[3000] md:z-20 font-sans rounded-t-3xl md:rounded-none animate-slideInFromBottom">
+        <div className="fixed md:relative bottom-0 md:bottom-auto left-0 md:left-auto right-0 md:right-auto w-full md:w-[400px] bg-white flex flex-col border-t md:border-t-0 md:border-l border-gray-200 shadow-2xl md:shadow-xl overflow-y-auto max-h-[55vh] md:max-h-none md:h-full z-[3000] md:z-20 font-sans rounded-t-3xl md:rounded-none animate-slideInFromBottom">
           {/* Mobile Drag Handle */}
           <div className="md:hidden flex justify-center pt-2 pb-1">
             <div className="w-12 h-1 bg-gray-300 rounded-full"></div>
