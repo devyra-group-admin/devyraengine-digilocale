@@ -24,14 +24,19 @@ const AccommodationDetails = ({
 
   return (
     <>
-      <div className="w-[400px] bg-white flex flex-col border-l border-gray-200 shadow-xl overflow-y-auto h-full z-20 font-sans">
+      <div className="fixed md:relative bottom-0 md:bottom-auto left-0 md:left-auto right-0 md:right-auto w-full md:w-[400px] bg-white flex flex-col border-t md:border-t-0 md:border-l border-gray-200 shadow-2xl md:shadow-xl overflow-y-auto max-h-[85vh] md:max-h-none md:h-full z-[1000] md:z-20 font-sans rounded-t-3xl md:rounded-none">
+        {/* Mobile Drag Handle */}
+        <div className="md:hidden flex justify-center pt-2 pb-1">
+          <div className="w-12 h-1 bg-gray-300 rounded-full"></div>
+        </div>
+        
         {/* Header Image & Title */}
-        <div className="p-5 border-b border-gray-100">
+        <div className="p-4 md:p-5 border-b border-gray-100">
           <div className="relative mb-4 group cursor-pointer overflow-hidden rounded-xl shadow-md">
             <img
               src={selectedAccommodation.images[0]}
               alt={selectedAccommodation.name}
-              className="w-full h-48 object-cover transform transition-transform duration-700 group-hover:scale-105"
+              className="w-full h-40 md:h-48 object-cover transform transition-transform duration-700 group-hover:scale-105"
             />
             <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-lg text-xs font-bold text-gray-800 shadow-sm">
               From R{selectedAccommodation.price}/night
@@ -39,7 +44,7 @@ const AccommodationDetails = ({
           </div>
           
           <div className="flex justify-between items-start">
-            <h1 className="text-2xl font-serif font-bold text-gray-900 mb-2 leading-tight">
+            <h1 className="text-xl md:text-2xl font-serif font-bold text-gray-900 mb-2 leading-tight">
               {selectedAccommodation.name}
             </h1>
             <button 
@@ -64,19 +69,19 @@ const AccommodationDetails = ({
           </div>
           
           <div className="space-y-2">
-            <div className="flex items-center text-gray-600 text-sm">
-              <MapPin size={14} className="mr-2 text-teal-600" />
-              <span>{selectedAccommodation.address}</span>
+            <div className="flex items-center text-gray-600 text-xs md:text-sm">
+              <MapPin size={14} className="mr-2 text-teal-600 flex-shrink-0" />
+              <span className="line-clamp-1">{selectedAccommodation.address}</span>
             </div>
-            <div className="flex items-center text-gray-600 text-sm">
-              <Phone size={14} className="mr-2 text-teal-600" />
+            <div className="flex items-center text-gray-600 text-xs md:text-sm">
+              <Phone size={14} className="mr-2 text-teal-600 flex-shrink-0" />
               <span>{selectedAccommodation.phone}</span>
             </div>
           </div>
         </div>
 
         {/* Booking Form Section */}
-        <div className="p-5 flex-1 bg-stone-50">
+        <div className="p-4 md:p-5 flex-1 bg-stone-50">
           <div className="bg-white p-4 rounded-xl shadow-sm border border-stone-200 mb-6 relative overflow-hidden">
             {/* Textured background hint */}
             <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'20\' height=\'20\' viewBox=\'0 0 20 20\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'%23000000\' fill-opacity=\'1\' fill-rule=\'evenodd\'%3E%3Ccircle cx=\'3\' cy=\'3\' r=\'3\'/%3E%3Ccircle cx=\'13\' cy=\'13\' r=\'3\'/%3E%3C/g%3E%3C/svg%3E")' }}></div>

@@ -127,93 +127,141 @@ const App = () => {
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       {/* Header */}
-      <header className="bg-white shadow-md border-b-2 border-amber-200">
-        <div className="px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <h1 className="text-2xl md:text-3xl font-serif italic text-green-800 font-normal">
-              Dullstroom
-              <span className="block text-xs text-amber-600 font-bold tracking-widest -mt-1">
-                • DIGITAL •
-              </span>
-            </h1>
+      <header className="bg-white shadow-md border-b-2 border-amber-200 sticky top-0 z-50">
+        <div className="px-3 md:px-4 py-2 md:py-3">
+          {/* Top row: Logo and Search */}
+          <div className="flex items-center justify-between mb-2 md:mb-0">
+            <div className="flex items-center space-x-4">
+              <h1 className="text-xl md:text-3xl font-serif italic text-green-800 font-normal">
+                Dullstroom
+                <span className="block text-[10px] md:text-xs text-amber-600 font-bold tracking-widest -mt-1">
+                  • DIGITAL •
+                </span>
+              </h1>
+            </div>
+
+            {/* Desktop Search */}
+            <div className="hidden md:flex items-center space-x-4">
+              {viewMode === 'businesses' && (
+                <div className="relative">
+                  <Search className="absolute left-3 top-3 text-gray-400" size={20} />
+                  <input
+                    type="text"
+                    placeholder="Search businesses..."
+                    className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
+              )}
+              {viewMode === 'bookings' && (
+                <div className="relative">
+                  <Search className="absolute left-3 top-3 text-gray-400" size={20} />
+                  <input
+                    type="text"
+                    placeholder="Search accommodations..."
+                    className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all"
+                    value={bookingsSearchQuery}
+                    onChange={(e) => setBookingsSearchQuery(e.target.value)}
+                  />
+                </div>
+              )}
+              {viewMode === 'community' && (
+                <div className="relative">
+                  <Search className="absolute left-3 top-3 text-gray-400" size={20} />
+                  <input
+                    type="text"
+                    placeholder="Search posts..."
+                    className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all"
+                    value={communitySearchQuery}
+                    onChange={(e) => setCommunitySearchQuery(e.target.value)}
+                  />
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* View Mode Switcher */}
-          <div className="flex bg-gray-100 rounded-lg p-1">
+          {/* Navigation Tabs */}
+          <div className="flex bg-gray-100 rounded-lg p-1 overflow-x-auto">
             <button 
               onClick={() => setViewMode('businesses')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-medium transition-colors whitespace-nowrap ${
                 viewMode === 'businesses' 
                   ? 'bg-white text-green-800 shadow' 
                   : 'text-gray-600 hover:text-gray-800'
               }`}
             >
-              Businesses
+              <span className="md:hidden">🏪</span>
+              <span className="hidden md:inline">Businesses</span>
             </button>
             <button 
               onClick={() => setViewMode('community')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-medium transition-colors whitespace-nowrap ${
                 viewMode === 'community' 
                   ? 'bg-white text-green-800 shadow' 
                   : 'text-gray-600 hover:text-gray-800'
               }`}
             >
-              Community
+              <span className="md:hidden">👥</span>
+              <span className="hidden md:inline">Community</span>
             </button>
             <button 
               onClick={() => setViewMode('bookings')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-medium transition-colors whitespace-nowrap ${
                 viewMode === 'bookings' 
                   ? 'bg-white text-green-800 shadow' 
                   : 'text-gray-600 hover:text-gray-800'
               }`}
             >
-              Bookings
+              <span className="md:hidden">🏨</span>
+              <span className="hidden md:inline">Bookings</span>
             </button>
             <button 
               onClick={() => setViewMode('admin')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-medium transition-colors whitespace-nowrap ${
                 viewMode === 'admin' 
                   ? 'bg-white text-green-800 shadow' 
                   : 'text-gray-600 hover:text-gray-800'
               }`}
             >
-              Admin
+              <span className="md:hidden">⚙️</span>
+              <span className="hidden md:inline">Admin</span>
             </button>
           </div>
 
-          <div className="flex items-center space-x-4">
+          {/* Mobile Search */}
+          <div className="md:hidden mt-2">
             {viewMode === 'businesses' && (
-              <div className="relative hidden md:block">
-                <Search className="absolute left-3 top-3 text-gray-400" size={20} />
+              <div className="relative">
+                <Search className="absolute left-3 top-2.5 text-gray-400" size={18} />
                 <input
                   type="text"
                   placeholder="Search businesses..."
-                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all"
+                  className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
             )}
             {viewMode === 'bookings' && (
-              <div className="relative hidden md:block">
-                <Search className="absolute left-3 top-3 text-gray-400" size={20} />
+              <div className="relative">
+                <Search className="absolute left-3 top-2.5 text-gray-400" size={18} />
                 <input
                   type="text"
                   placeholder="Search accommodations..."
-                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all"
+                  className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all"
                   value={bookingsSearchQuery}
                   onChange={(e) => setBookingsSearchQuery(e.target.value)}
                 />
               </div>
             )}
             {viewMode === 'community' && (
-              <div className="relative hidden md:block">
-                <Search className="absolute left-3 top-3 text-gray-400" size={20} />
+              <div className="relative">
+                <Search className="absolute left-3 top-2.5 text-gray-400" size={18} />
                 <input
                   type="text"
                   placeholder="Search posts..."
-                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all"
+                  className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all"
                   value={communitySearchQuery}
                   onChange={(e) => setCommunitySearchQuery(e.target.value)}
                 />
