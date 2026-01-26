@@ -1,14 +1,11 @@
 {
+  "buildCommand": "cd client && npm install && npm run build",
+  "outputDirectory": "client/dist",
+  "installCommand": "npm install",
   "rewrites": [
     {
       "source": "/(.*)",
       "destination": "/index.html"
     }
-  ],
-  "cleanUrls": true,
-  "trailingSlash": false,
-  "framework": "vite",
-  "buildCommand": "npm run vercel-build",
-  "outputDirectory": "client/dist",
-  "installCommand": "npm install"
+  ]
 }
