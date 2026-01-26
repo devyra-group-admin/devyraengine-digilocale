@@ -267,7 +267,7 @@ const App = () => {
       </header>
 
       {/* Main Content */}
-      <div className="flex-1 flex pb-20 md:pb-0">
+      <div className="flex-1 flex flex-col md:flex-row pb-20 md:pb-0 h-[calc(100vh-180px)] md:h-auto">
         {/* Business View */}
         {viewMode === 'businesses' && (
           <BusinessesSection 
