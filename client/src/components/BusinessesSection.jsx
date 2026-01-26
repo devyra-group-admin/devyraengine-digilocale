@@ -1,13 +1,12 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Star, MapPin, Phone, Globe, Navigation, X, ZoomIn, ZoomOut } from 'lucide-react';
 
-const BusinessesSection = ({ searchQuery }) => {
+const BusinessesSection = ({ searchQuery, showMobileMap, setShowMobileMap }) => {
   const [selectedBusiness, setSelectedBusiness] = useState(null);
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markersRef = useRef([]);
   const [leafletLoaded, setLeafletLoaded] = useState(false);
-  const [showMobileMap, setShowMobileMap] = useState(true); // Map-first on mobile
 
   // Business data
   const places = [
@@ -328,38 +327,11 @@ const BusinessesSection = ({ searchQuery }) => {
             onClick={() => mapInstanceRef.current?.zoomOut()}
             className="p-3 bg-white rounded-lg shadow-lg hover:bg-gray-50 transition-colors"
           >
-            <ZoomOut size={20} />
+          <ZoomOut size={20} />
           </button>
         </div>
       </div>
-
-      {/* Mobile Toggle Button */}
-      <div className="md:hidden absolute bottom-6 left-1/2 transform -translate-x-1/2 z-[1000]">
-        <button
-          onClick={() => {
-             const newState = !showMobileMap;
-             setShowMobileMap(newState);
-             if (newState) {
-               // Trigger resize when switching to map
-               setTimeout(() => mapInstanceRef.current?.invalidateSize(), 150);
-             }
-          }}
-          className="bg-gray-900 text-white px-6 py-3 rounded-full shadow-xl flex items-center space-x-2 font-semibold hover:bg-gray-800 transition-colors border border-gray-700"
-        >
-          {showMobileMap ? (
-            <>
-              <span className="mr-2">📄</span>
-              <span>Show List</span>
-            </>
-          ) : (
-            <>
-              <MapPin size={18} />
-              <span>Show Map</span>
-            </>
-          )}
-        </button>
-      </div>
-
+      
       {/* Business Details Sidebar - Responsive Bottom Sheet / Panel */}
       {selectedBusiness && (
         <div className="fixed md:relative bottom-0 md:bottom-auto left-0 md:left-auto right-0 md:right-auto w-full md:w-[400px] bg-white flex flex-col border-t md:border-t-0 md:border-l border-gray-200 shadow-2xl md:shadow-xl overflow-y-auto max-h-[75vh] md:max-h-none md:h-full z-[3000] md:z-20 font-sans rounded-t-3xl md:rounded-none animate-slideInFromBottom">

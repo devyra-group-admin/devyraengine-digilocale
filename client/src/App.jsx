@@ -12,6 +12,7 @@ import AdminPanel from './components/AdminPanel';
 const App = () => {
   // View Mode State 
   const [viewMode, setViewMode] = useState('businesses'); // 'businesses', 'community', 'bookings', or 'admin'
+  const [showMobileMap, setShowMobileMap] = useState(true); // Map-first on mobile
   const [selectedAccommodation, setSelectedAccommodation] = useState(null);
   const [selectedEventCategory, setSelectedEventCategory] = useState(null);
   const [selectedBoard, setSelectedBoard] = useState('local-events');
@@ -225,44 +226,42 @@ const App = () => {
             </button>
           </div>
 
-          {/* Mobile Search */}
-          <div className="md:hidden mt-2">
-            {viewMode === 'businesses' && (
-              <div className="relative">
-                <Search className="absolute left-3 top-2.5 text-gray-400" size={18} />
-                <input
-                  type="text"
-                  placeholder="Search businesses..."
-                  className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
+          {/* Mobile Search & Map/List Toggle */}
+          <div className="md:hidden mt-3 flex flex-col gap-3">
+             {/* Map/List Switcher */}
+            {(viewMode === 'businesses' || viewMode === 'bookings') && (
+              <div className="flex bg-gray-100 p-1 rounded-xl self-center shadow-inner">
+                <button 
+                  onClick={() => setShowMobileMap(false)}
+                  className={`flex items-center gap-2 px-6 py-1.5 rounded-lg text-xs font-bold transition-all ${!showMobileMap ? 'bg-white text-green-800 shadow-sm' : 'text-gray-500'}`}
+                >
+                  <Menu size={14} />
+                  <span>LIST</span>
+                </button>
+                <button 
+                  onClick={() => setShowMobileMap(true)}
+                  className={`flex items-center gap-2 px-6 py-1.5 rounded-lg text-xs font-bold transition-all ${showMobileMap ? 'bg-white text-green-800 shadow-sm' : 'text-gray-500'}`}
+                >
+                  <MapPin size={14} />
+                  <span>MAP</span>
+                </button>
               </div>
             )}
-            {viewMode === 'bookings' && (
-              <div className="relative">
-                <Search className="absolute left-3 top-2.5 text-gray-400" size={18} />
-                <input
-                  type="text"
-                  placeholder="Search accommodations..."
-                  className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all"
-                  value={bookingsSearchQuery}
-                  onChange={(e) => setBookingsSearchQuery(e.target.value)}
-                />
-              </div>
-            )}
-            {viewMode === 'community' && (
-              <div className="relative">
-                <Search className="absolute left-3 top-2.5 text-gray-400" size={18} />
-                <input
-                  type="text"
-                  placeholder="Search posts..."
-                  className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all"
-                  value={communitySearchQuery}
-                  onChange={(e) => setCommunitySearchQuery(e.target.value)}
-                />
-              </div>
-            )}
+
+            <div className="relative">
+              <Search className="absolute left-3 top-2.5 text-gray-400" size={18} />
+              <input
+                type="text"
+                placeholder={`Search ${viewMode === 'businesses' ? 'businesses' : viewMode === 'bookings' ? 'accommodations' : 'posts'}...`}
+                className="w-full pl-10 pr-4 py-2 text-sm border border-gray-200 rounded-xl bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-600 transition-all shadow-sm"
+                value={viewMode === 'businesses' ? searchQuery : viewMode === 'bookings' ? bookingsSearchQuery : communitySearchQuery}
+                onChange={(e) => {
+                  if (viewMode === 'businesses') setSearchQuery(e.target.value);
+                  else if (viewMode === 'bookings') setBookingsSearchQuery(e.target.value);
+                  else setCommunitySearchQuery(e.target.value);
+                }}
+              />
+            </div>
           </div>
         </div>
       </header>
@@ -271,7 +270,11 @@ const App = () => {
       <div className="flex-1 flex pb-20 md:pb-0">
         {/* Business View */}
         {viewMode === 'businesses' && (
-          <BusinessesSection searchQuery={searchQuery} />
+          <BusinessesSection 
+            searchQuery={searchQuery} 
+            showMobileMap={showMobileMap} 
+            setShowMobileMap={setShowMobileMap} 
+          />
         )}
 
         {/* Community View */}
@@ -294,6 +297,8 @@ const App = () => {
             setGuests={setGuests}
             showGuestSelector={showGuestSelector}
             setShowGuestSelector={setShowGuestSelector}
+            showMobileMap={showMobileMap}
+            setShowMobileMap={setShowMobileMap}
           />
         )}
 

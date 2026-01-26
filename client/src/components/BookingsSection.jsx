@@ -16,14 +16,15 @@ const BookingsSection = ({
   guests,
   setGuests,
   showGuestSelector,
-  setShowGuestSelector
+  setShowGuestSelector,
+  showMobileMap,
+  setShowMobileMap
 }) => {
   // Create refs for the map
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markersRef = useRef([]);
   const [leafletLoaded, setLeafletLoaded] = useState(false);
-  const [showMobileMap, setShowMobileMap] = useState(true); // Map-first on mobile
 
   // Default map settings for Dullstroom
   const mapCenter = [-25.4175, 30.1544];
@@ -168,33 +169,6 @@ const BookingsSection = ({
           mapInstanceRef={mapInstanceRef}
           markersRef={markersRef}
         />
-      </div>
-
-      {/* Mobile Toggle Button */}
-      <div className="md:hidden absolute bottom-6 left-1/2 transform -translate-x-1/2 z-[500]">
-        <button
-          onClick={() => {
-             const newState = !showMobileMap;
-             setShowMobileMap(newState);
-             if (newState) {
-               // Trigger resize when switching to map
-               setTimeout(() => mapInstanceRef.current?.invalidateSize(), 150);
-             }
-          }}
-          className="bg-gray-900 text-white px-6 py-3 rounded-full shadow-xl flex items-center space-x-2 font-semibold hover:bg-gray-800 transition-colors border border-gray-700"
-        >
-          {showMobileMap ? (
-            <>
-              <span className="mr-2">📄</span>
-              <span>Show List</span>
-            </>
-          ) : (
-            <>
-              <MapPin size={18} />
-              <span>Show Map</span>
-            </>
-          )}
-        </button>
       </div>
       
       {/* Booking Details Sidebar */}
