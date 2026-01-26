@@ -21,5 +21,9 @@ export default defineConfig({
     modules: {
       localsConvention: 'camelCase'
     }
+  },
+  build: {
+    outDir: 'dist',
+    emptyOutDir: true
   }
 })
