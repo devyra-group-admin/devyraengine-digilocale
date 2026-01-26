@@ -8,6 +8,7 @@ import { communityBoards, communityPosts } from '../data/communityBoards';
 
 const CommunitySection = ({ searchQuery = '' }) => {
   const [selectedBoard, setSelectedBoard] = useState('local-events');
+  const [showMobileSidebar, setShowMobileSidebar] = useState(false);
 
   // Icon mapping
   const getIcon = (iconName) => {
@@ -28,8 +29,8 @@ const CommunitySection = ({ searchQuery = '' }) => {
 
   return (
     <div className="flex w-full h-full bg-gray-100 overflow-hidden font-sans">
-      {/* Sidebar - Fixed Width */}
-      <div className="w-[280px] flex-shrink-0 bg-gray-50 flex flex-col border-r border-gray-200">
+      {/* Sidebar - Hidden on mobile, visible on desktop */}
+      <div className="hidden md:flex w-[280px] flex-shrink-0 bg-gray-50 flex-col border-r border-gray-200">
         
         {/* Categories */}
         <div className="p-4 space-y-1">
@@ -86,6 +87,23 @@ const CommunitySection = ({ searchQuery = '' }) => {
 
       {/* Main Feed Area */}
       <div className="flex-1 flex flex-col relative bg-gray-100">
+        
+        {/* Mobile Category Selector */}
+        <div className="md:hidden bg-white border-b border-gray-200 p-4">
+          <label htmlFor="mobile-category" className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Category</label>
+          <select
+            id="mobile-category"
+            value={selectedBoard}
+            onChange={(e) => setSelectedBoard(e.target.value)}
+            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+          >
+            {communityBoards.map((board) => (
+              <option key={board.id} value={board.id}>
+                {board.name}
+              </option>
+            ))}
+          </select>
+        </div>
 
         {/* Scrollable Feed */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">

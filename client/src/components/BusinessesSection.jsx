@@ -7,7 +7,7 @@ const BusinessesSection = ({ searchQuery }) => {
   const mapInstanceRef = useRef(null);
   const markersRef = useRef([]);
   const [leafletLoaded, setLeafletLoaded] = useState(false);
-  const [showMobileMap, setShowMobileMap] = useState(false);
+  const [showMobileMap, setShowMobileMap] = useState(true); // Map-first on mobile
 
   // Business data
   const places = [

@@ -7,6 +7,7 @@ import {
 
 const AdminPanel = () => {
   const [activeTab, setActiveTab] = useState('overview');
+  const [showMobileSidebar, setShowMobileSidebar] = useState(false);
 
   // Mock data
   const stats = {
@@ -32,8 +33,8 @@ const AdminPanel = () => {
 
   return (
     <div className="flex h-screen bg-gray-50">
-      {/* Sidebar */}
-      <div className="w-64 bg-gray-900 text-white flex flex-col">
+      {/* Sidebar - Hidden on mobile, visible on desktop */}
+      <div className="hidden md:flex w-64 bg-gray-900 text-white flex-col">
         <div className="p-6 border-b border-gray-800">
           <h1 className="text-xl font-bold">Admin Panel</h1>
           <p className="text-gray-400 text-sm">Dullstroom Digital</p>
@@ -127,7 +128,24 @@ const AdminPanel = () => {
       {/* Main Content */}
       <div className="flex-1 overflow-auto">
         {/* Header */}
-        <div className="bg-white border-b border-gray-200 px-8 py-4">
+        <div className="bg-white border-b border-gray-200 px-4 md:px-8 py-4">
+          {/* Mobile Navigation Dropdown */}
+          <div className="md:hidden mb-4">
+            <select
+              value={activeTab}
+              onChange={(e) => setActiveTab(e.target.value)}
+              className="w-full px-4 py-2 bg-gray-900 text-white border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+            >
+              <option value="overview">Dashboard Overview</option>
+              <option value="users">User Management</option>
+              <option value="businesses">Business Listings</option>
+              <option value="content">Content Moderation</option>
+              <option value="subscriptions">Subscriptions</option>
+              <option value="analytics">Analytics</option>
+              <option value="settings">Settings</option>
+            </select>
+          </div>
+          
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold text-gray-900">
@@ -146,7 +164,7 @@ const AdminPanel = () => {
                 {activeTab === 'content' && 'Moderate community posts and media'}
               </p>
             </div>
-            <div className="relative">
+            <div className="relative hidden md:block">
               <Search className="absolute left-3 top-3 text-gray-400" size={20} />
               <input
                 type="text"
@@ -158,7 +176,7 @@ const AdminPanel = () => {
         </div>
 
         {/* Content Area */}
-        <div className="p-8">
+        <div className="p-4 md:p-8">
           {activeTab === 'overview' && (
             <div className="space-y-6">
               {/* Stats Grid */}

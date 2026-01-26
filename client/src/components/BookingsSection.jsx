@@ -23,7 +23,7 @@ const BookingsSection = ({
   const mapInstanceRef = useRef(null);
   const markersRef = useRef([]);
   const [leafletLoaded, setLeafletLoaded] = useState(false);
-  const [showMobileMap, setShowMobileMap] = useState(false);
+  const [showMobileMap, setShowMobileMap] = useState(true); // Map-first on mobile
 
   // Default map settings for Dullstroom
   const mapCenter = [-25.4175, 30.1544];
