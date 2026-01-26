@@ -342,72 +342,77 @@ const BusinessesSection = ({ searchQuery }) => {
         </button>
       </div>
 
-      {/* Business Details Sidebar */}
+      {/* Business Details Sidebar - Responsive Bottom Sheet / Panel */}
       {selectedBusiness && (
-        <div className="w-[400px] bg-white flex flex-col border-l border-gray-200 shadow-xl overflow-y-auto">
-          <div className="p-5 border-b border-gray-100">
+        <div className="fixed md:relative bottom-0 md:bottom-auto left-0 md:left-auto right-0 md:right-auto w-full md:w-[400px] bg-white flex flex-col border-t md:border-t-0 md:border-l border-gray-200 shadow-2xl md:shadow-xl overflow-y-auto max-h-[85vh] md:max-h-none md:h-full z-[3000] md:z-20 font-sans rounded-t-3xl md:rounded-none">
+          {/* Mobile Drag Handle */}
+          <div className="md:hidden flex justify-center pt-2 pb-1">
+            <div className="w-12 h-1 bg-gray-300 rounded-full"></div>
+          </div>
+
+          <div className="p-4 md:p-5 border-b border-gray-100">
             <div className="flex justify-between items-start mb-4">
-              <h2 className="text-2xl font-bold text-gray-900">{selectedBusiness.name}</h2>
+              <h2 className="text-xl md:text-2xl font-bold text-gray-900 leading-tight">{selectedBusiness.name}</h2>
               <button 
                 onClick={() => setSelectedBusiness(null)}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
+                className="text-gray-400 hover:text-gray-600 transition-colors bg-gray-50 p-1 rounded-full"
               >
-                <X size={24} />
+                <X size={20} className="md:w-6 md:h-6" />
               </button>
             </div>
             
             <img 
               src={selectedBusiness.photo} 
               alt={selectedBusiness.name}
-              className="w-full h-48 object-cover rounded-lg mb-4"
+              className="w-full h-40 md:h-48 object-cover rounded-xl mb-4 shadow-sm"
             />
             
             <div className="flex items-center mb-3">
               <Star className="text-yellow-400 mr-1" size={16} fill="currentColor" />
-              <span className="font-semibold mr-1">{selectedBusiness.rating}</span>
-              <span className="text-gray-600">({selectedBusiness.reviews} reviews)</span>
+              <span className="font-semibold mr-1 text-sm md:text-base">{selectedBusiness.rating}</span>
+              <span className="text-gray-600 text-xs md:text-sm">({selectedBusiness.reviews} reviews)</span>
             </div>
             
-            <p className="text-gray-600 mb-4 leading-relaxed">{selectedBusiness.description}</p>
+            <p className="text-gray-600 mb-4 leading-relaxed text-sm md:text-base">{selectedBusiness.description}</p>
             
-            <div className="space-y-3">
+            <div className="space-y-3 pb-4">
               <div className="flex items-center">
-                <MapPin className="text-teal-600 mr-3" size={16} />
-                <span className="text-sm text-gray-700">{selectedBusiness.address}</span>
+                <MapPin className="text-green-700 mr-3 flex-shrink-0" size={16} />
+                <span className="text-xs md:text-sm text-gray-700 line-clamp-1">{selectedBusiness.address}</span>
               </div>
               
               <div className="flex items-center">
-                <Phone className="text-teal-600 mr-3" size={16} />
-                <a href={`tel:${selectedBusiness.phone}`} className="text-sm text-teal-600 hover:underline">
+                <Phone className="text-green-700 mr-3 flex-shrink-0" size={16} />
+                <a href={`tel:${selectedBusiness.phone}`} className="text-xs md:text-sm text-green-700 font-medium hover:underline">
                   {selectedBusiness.phone}
                 </a>
               </div>
               
               {selectedBusiness.website && (
                 <div className="flex items-center">
-                  <Globe className="text-teal-600 mr-3" size={16} />
+                  <Globe className="text-green-700 mr-3 flex-shrink-0" size={16} />
                   <a 
                     href={selectedBusiness.website} 
                     target="_blank" 
                     rel="noopener noreferrer" 
-                    className="text-sm text-teal-600 hover:underline"
+                    className="text-xs md:text-sm text-green-700 font-medium hover:underline"
                   >
                     Visit Website
                   </a>
                 </div>
               )}
               
-              <div className="flex items-center">
-                <Navigation className="text-teal-600 mr-3" size={16} />
+              <div className="mt-4">
                 <button 
                   onClick={() => {
                     if (selectedBusiness.position) {
                       window.open(`https://www.google.com/maps/dir/?api=1&destination=${selectedBusiness.position[0]},${selectedBusiness.position[1]}`, '_blank');
                     }
                   }}
-                  className="text-sm text-teal-600 hover:underline"
+                  className="w-full flex items-center justify-center gap-2 bg-green-800 text-white py-3 rounded-xl font-bold shadow-md hover:bg-green-900 transition-all active:scale-[0.98]"
                 >
-                  Get Directions
+                  <Navigation size={18} />
+                  <span>Get Directions</span>
                 </button>
               </div>
             </div>

@@ -181,51 +181,47 @@ const App = () => {
             </div>
           </div>
 
-          {/* Navigation Tabs */}
-          <div className="flex bg-gray-100 rounded-lg p-1 overflow-x-auto">
+          {/* Navigation Tabs - Hidden on mobile, shown on desktop */}
+          <div className="hidden md:flex bg-gray-100 rounded-lg p-1 overflow-x-auto">
             <button 
               onClick={() => setViewMode('businesses')}
-              className={`px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-medium transition-colors whitespace-nowrap ${
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
                 viewMode === 'businesses' 
                   ? 'bg-white text-green-800 shadow' 
                   : 'text-gray-600 hover:text-gray-800'
               }`}
             >
-              <span className="md:hidden">🏪</span>
-              <span className="hidden md:inline">Businesses</span>
+              Businesses
             </button>
             <button 
               onClick={() => setViewMode('community')}
-              className={`px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-medium transition-colors whitespace-nowrap ${
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
                 viewMode === 'community' 
                   ? 'bg-white text-green-800 shadow' 
                   : 'text-gray-600 hover:text-gray-800'
               }`}
             >
-              <span className="md:hidden">👥</span>
-              <span className="hidden md:inline">Community</span>
+              Community
             </button>
             <button 
               onClick={() => setViewMode('bookings')}
-              className={`px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-medium transition-colors whitespace-nowrap ${
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
                 viewMode === 'bookings' 
                   ? 'bg-white text-green-800 shadow' 
                   : 'text-gray-600 hover:text-gray-800'
               }`}
             >
-              <span className="md:hidden">🏨</span>
-              <span className="hidden md:inline">Bookings</span>
+              Bookings
             </button>
             <button 
               onClick={() => setViewMode('admin')}
-              className={`px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-medium transition-colors whitespace-nowrap ${
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
                 viewMode === 'admin' 
                   ? 'bg-white text-green-800 shadow' 
                   : 'text-gray-600 hover:text-gray-800'
               }`}
             >
-              <span className="md:hidden">⚙️</span>
-              <span className="hidden md:inline">Admin</span>
+              Admin
             </button>
           </div>
 
@@ -271,8 +267,8 @@ const App = () => {
         </div>
       </header>
 
-      {/* Main Content - Three Views */}
-      <div className="flex-1 flex">
+      {/* Main Content */}
+      <div className="flex-1 flex pb-20 md:pb-0">
         {/* Business View */}
         {viewMode === 'businesses' && (
           <BusinessesSection searchQuery={searchQuery} />
@@ -306,6 +302,49 @@ const App = () => {
           <AdminPanel />
         )}
       </div>
+
+      {/* Mobile Bottom Navigation */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-6 py-3 flex justify-between items-center z-[2000] shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
+        <button 
+          onClick={() => setViewMode('businesses')}
+          className={`flex flex-col items-center gap-1 ${viewMode === 'businesses' ? 'text-green-800' : 'text-gray-400'}`}
+        >
+          <div className={`p-1 rounded-lg ${viewMode === 'businesses' ? 'bg-green-50' : ''}`}>
+             <ShoppingBag size={20} className={viewMode === 'businesses' ? 'fill-green-800/10' : ''} />
+          </div>
+          <span className="text-[10px] font-bold uppercase tracking-tighter">Explore</span>
+        </button>
+        
+        <button 
+          onClick={() => setViewMode('community')}
+          className={`flex flex-col items-center gap-1 ${viewMode === 'community' ? 'text-green-800' : 'text-gray-400'}`}
+        >
+          <div className={`p-1 rounded-lg ${viewMode === 'community' ? 'bg-green-50' : ''}`}>
+             <Users size={20} className={viewMode === 'community' ? 'fill-green-800/10' : ''} />
+          </div>
+          <span className="text-[10px] font-bold uppercase tracking-tighter">Circle</span>
+        </button>
+        
+        <button 
+          onClick={() => setViewMode('bookings')}
+          className={`flex flex-col items-center gap-1 ${viewMode === 'bookings' ? 'text-green-800' : 'text-gray-400'}`}
+        >
+          <div className={`p-1 rounded-lg ${viewMode === 'bookings' ? 'bg-green-50' : ''}`}>
+             <Calendar size={20} className={viewMode === 'bookings' ? 'fill-green-800/10' : ''} />
+          </div>
+          <span className="text-[10px] font-bold uppercase tracking-tighter">Stay</span>
+        </button>
+        
+        <button 
+          onClick={() => setViewMode('admin')}
+          className={`flex flex-col items-center gap-1 ${viewMode === 'admin' ? 'text-green-800' : 'text-gray-400'}`}
+        >
+          <div className={`p-1 rounded-lg ${viewMode === 'admin' ? 'bg-green-50' : ''}`}>
+             <MoreVertical size={20} />
+          </div>
+          <span className="text-[10px] font-bold uppercase tracking-tighter">Admin</span>
+        </button>
+      </nav>
     </div>
   );
 };
