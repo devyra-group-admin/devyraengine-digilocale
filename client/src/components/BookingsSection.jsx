@@ -103,11 +103,10 @@ const BookingsSection = ({
         preferCanvas: true
       });
 
-      // Add tile layer - CartoDB Voyager is cleaner and looks more premium
-      window.L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-        attribution: '© OpenStreetMap contributors © CARTO',
-        subdomains: 'abcd',
-        maxZoom: 20
+      // Add tile layer - OpenStreetMap for vibrant colors
+      window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        maxZoom: 19
       }).addTo(map);
 
       mapInstanceRef.current = map;
