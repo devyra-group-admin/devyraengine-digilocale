@@ -176,18 +176,20 @@ const BookingsSection = ({
       
       {/* Booking Details Sidebar */}
       {selectedAccommodation && (
-        <AccommodationDetails
-          selectedAccommodation={selectedAccommodation}
-          checkInDate={checkInDate}
-          onCheckInDateChange={onCheckInDateChange}
-          checkOutDate={checkOutDate}
-          onCheckOutDateChange={onCheckOutDateChange}
-          guests={guests}
-          onGuestsChange={onGuestsChange}
-          showGuestSelector={showGuestSelector}
-          onShowGuestSelectorToggle={onShowGuestSelectorToggle}
-          onClose={() => setSelectedAccommodation(null)}
-        />
+        <div className={!showMobileMap ? 'hidden md:contents' : 'contents'}>
+          <AccommodationDetails
+            selectedAccommodation={selectedAccommodation}
+            checkInDate={checkInDate}
+            onCheckInDateChange={onCheckInDateChange}
+            checkOutDate={checkOutDate}
+            onCheckOutDateChange={onCheckOutDateChange}
+            guests={guests}
+            onGuestsChange={onGuestsChange}
+            showGuestSelector={showGuestSelector}
+            onShowGuestSelectorToggle={onShowGuestSelectorToggle}
+            onClose={() => setSelectedAccommodation(null)}
+          />
+        </div>
       )}
     </div>
   );

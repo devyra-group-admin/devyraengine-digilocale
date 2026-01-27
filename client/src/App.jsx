@@ -1,4 +1,4 @@
-// Force Rebuild 123
+
 import React, { useState, useEffect } from 'react';
 import { Search, Menu, MapPin, Star, Phone, Navigation, Globe, X, ZoomIn, ZoomOut, MessageCircle, ThumbsUp, MoreVertical, Plus, Calendar, ShoppingBag, Briefcase, AlertCircle, Fish, Wrench, Users } from 'lucide-react';
 import BookingsSection from './components/BookingsSection';
@@ -107,8 +107,8 @@ const App = () => {
     setCheckInDate(tomorrow.toISOString().split('T')[0]);
     setCheckOutDate(dayAfter.toISOString().split('T')[0]);
     
-    // Set default accommodation
-    if (accommodations.length > 0) {
+    // Set default accommodation - only for desktop to avoid blocking mobile view
+    if (accommodations.length > 0 && window.innerWidth >= 768) {
       setSelectedAccommodation(accommodations[0]);
     }
   }, []);
