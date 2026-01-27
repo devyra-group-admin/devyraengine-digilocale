@@ -267,9 +267,14 @@ const BusinessesSection = ({ searchQuery, showMobileMap, setShowMobileMap }) => 
     <div className="flex flex-col md:flex-row w-full h-full bg-gray-50 relative">
       {/* Business List Sidebar */}
       <div className={`w-full md:w-80 bg-white flex flex-col border-r border-gray-200 shadow-sm overflow-y-auto ${showMobileMap ? 'hidden md:flex' : 'flex'} h-full`}>
-        <div className="p-5 border-b border-gray-100">
-          <h2 className="text-lg font-bold text-gray-900 mb-4 sticky top-0 bg-white z-10">Local Businesses</h2>
-          <div className="space-y-3">
+        <div className="p-4 md:p-5 border-b border-gray-100 sticky top-0 bg-white z-10 backdrop-blur-md bg-white/90">
+          <h2 className="text-xl md:text-lg font-bold text-gray-900 leading-tight">Local Businesses</h2>
+          <p className="text-xs text-gray-400 mt-1 font-medium uppercase tracking-wider">
+            {filteredPlaces.length} locations found
+          </p>
+        </div>
+        
+        <div className="p-4 space-y-4">
             {filteredPlaces.map((place) => (
               <div
                 key={place.id}
@@ -277,41 +282,59 @@ const BusinessesSection = ({ searchQuery, showMobileMap, setShowMobileMap }) => 
                   setSelectedBusiness(place);
                   setShowMobileMap(true); // Switch to map view on mobile
                 }}
-                className={`p-4 rounded-xl cursor-pointer transition-all duration-200 ${
+                className={`group relative flex flex-col rounded-2xl cursor-pointer transition-all duration-300 overflow-hidden ${
                   selectedBusiness?.id === place.id 
-                    ? 'bg-teal-50 border-2 border-teal-500 shadow-md' 
-                    : 'bg-white border border-gray-200 hover:bg-gray-50 hover:border-gray-300'
+                    ? 'ring-2 ring-green-600 shadow-xl scale-[1.02]' 
+                    : 'bg-white border border-gray-100 shadow-sm hover:shadow-lg hover:-translate-y-1'
                 }`}
               >
-                <div className="flex md:block space-x-4 md:space-x-0">
+                {/* Hero Image Section */}
+                <div className="relative h-48 overflow-hidden">
                   <img
                     src={place.photo}
                     alt={place.name}
-                    className="w-24 h-24 md:w-full md:h-32 rounded-lg object-cover mb-0 md:mb-3 flex-shrink-0"
+                    className="w-full h-full object-cover transform transition-transform duration-700 group-hover:scale-110"
                   />
-                  <div className="flex-1">
-                    <h3 className="text-sm font-bold text-gray-900 mb-1 md:mb-2">{place.name}</h3>
-                    <div className="flex items-center space-x-2 mb-2">
-                       <div className="flex items-center space-x-1">
-                        {[...Array(5)].map((_, i) => (
-                          <Star 
-                            key={i} 
-                            size={12} 
-                            className={`${i < Math.floor(place.rating) ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
-                          />
-                        ))}
-                      </div>
-                      <span className="text-xs text-gray-600 font-medium">
-                        {place.rating} ({place.reviews})
-                      </span>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-80"></div>
+                  
+                  {/* Top Right Rating Badge */}
+                  <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-sm px-2 py-1 rounded-lg shadow-sm flex items-center space-x-1">
+                    <Star size={12} className="text-yellow-500 fill-current" />
+                    <span className="text-xs font-bold text-gray-900">{place.rating}</span>
+                  </div>
+
+                  {/* Bottom Left Content Overlay */}
+                  <div className="absolute bottom-3 left-3 right-3 text-white">
+                    <span className="text-[10px] font-bold uppercase tracking-wider bg-green-600/90 px-2 py-0.5 rounded-full mb-2 inline-block backdrop-blur-sm shadow-sm">
+                      {place.category}
+                    </span>
+                    <h3 className="text-lg font-bold text-white leading-tight shadow-md">
+                      {place.name}
+                    </h3>
+                  </div>
+                </div>
+
+                {/* Content Section */}
+                <div className="p-4 bg-white">
+                  <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed mb-3">
+                    {place.description}
+                  </p>
+                  
+                  <div className="flex items-center justify-between pt-3 border-t border-gray-50">
+                    <div className="flex items-center text-xs text-gray-400 font-medium">
+                      <MapPin size={12} className="mr-1" />
+                      <span className="line-clamp-1 max-w-[120px]">{place.address}</span>
                     </div>
-                    <div className="text-xs text-gray-500">{place.category}</div>
+                    <span className="text-xs font-bold text-green-700 group-hover:underline flex items-center">
+                      View Map <Navigation size={10} className="ml-1" />
+                    </span>
                   </div>
                 </div>
               </div>
             ))}
           </div>
-        </div>
+          {/* Spacer for bottom nav on mobile */}
+          <div className="h-20 md:h-0"></div>
       </div>
 
       {/* Map Center */}
