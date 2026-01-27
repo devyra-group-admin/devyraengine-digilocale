@@ -126,9 +126,9 @@ const App = () => {
   });
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
       {/* Header */}
-      <header className="bg-white shadow-md border-b-2 border-amber-200 sticky top-0 z-50">
+      <header className="bg-white shadow-md border-b-2 border-amber-200 flex-none z-50">
         <div className="px-3 md:px-4 py-2 md:py-3">
           {/* Top row: Logo and Search */}
           <div className="flex items-center justify-between mb-2 md:mb-0">
@@ -267,7 +267,7 @@ const App = () => {
       </header>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col md:flex-row pb-20 md:pb-0 h-[calc(100vh-180px)] md:h-auto">
+      <div className="flex-1 flex flex-col md:flex-row pb-20 md:pb-0 min-h-0 relative">
         {/* Business View */}
         {viewMode === 'businesses' && (
           <BusinessesSection 
