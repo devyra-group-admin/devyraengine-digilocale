@@ -1,25 +1,34 @@
 # Supabase Integration Instructions
 
-## 1. Supabase Setup
+## Current Setup: Local Supabase
 
-1.  Log in to your [Supabase Dashboard](https://supabase.com/dashboard).
-2.  Create a new project.
-3.  Go to the **SQL Editor** in the side menu.
-4.  Open the file `client/supabase_setup.sql` in this project, copy its content, and paste it into the SQL Editor.
-5.  Click **Run** to create the `accommodations` table and insert the seed data.
+I have set up a **Local Supabase** instance for you. This runs completely free on your machine using Docker.
 
-## 2. Environment Variables
+**Credentials (already configured in `client/.env`):**
 
-1.  In your Supabase project settings, go to **API**.
-2.  Copy the **Project URL** and **anon public key**.
-3.  Create a file named `.env` in the `client` directory (you can copy `.env.example`).
-4.  Fill in the values:
-    ```
-    VITE_SUPABASE_URL=your_project_url
-    VITE_SUPABASE_ANON_KEY=your_anon_public_key
-    ```
-5.  Restart your development server (`npm run dev`) to load the new environment variables.
+- URL: `http://127.0.0.1:54321`
+- Anon Key: (Pre-configured)
 
-## 3. Verification
+**Dashboard:**
+You can access your local Supabase Studio to view/edit data here:
+[http://127.0.0.1:54323](http://127.0.0.1:54323)
 
-The application will now fetch accommodation data from your Supabase database instead of the hardcoded file. You can verify this by modifying a record in the Supabase table and refreshing the application page.
+## How to use
+
+1.  **Ensure Docker is running.**
+2.  **Start Supabase:** `npx supabase start` (It's already running now).
+3.  **Run Client:** `cd client && npm run dev`.
+
+## Moving to Cloud (Optional)
+
+If you want to deploy this to the internet later:
+
+1.  Create a project at [supabase.com](https://supabase.com).
+2.  Link your project: `npx supabase link --project-ref your-project-id`
+3.  Push your migrations: `npx supabase db push`
+4.  Update `client/.env` with your production keys.
+
+## Troubleshooting
+
+If `npx supabase start` fails, try `npx supabase stop --no-backup` and start again.
+I have temporarily moved older migrations to `supabase/migrations_bak` to ensure a clean startup.
