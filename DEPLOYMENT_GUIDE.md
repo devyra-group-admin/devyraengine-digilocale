@@ -21,10 +21,8 @@ We deploy the entire monorepo as a single service on Railway. The backend acts a
 3. Click **"New Project"** -> **"Deploy from GitHub repo"**.
 4. Select your repository.
 5. **Configure Project**:
-   - Railway will auto-detect the root `package.json`.
-   - **Build Command**: `npm run build` (This runs `npm run build --workspace=client`)
-   - **Start Command**: `npm start` (This runs `npm start --workspace=server`)
-   - **Root Directory**: Leave as `/` (Root).
+   - The project includes a `railway.json` file, so **Build Command** and **Start Command** effectively auto-configure.
+   - **Root Directory**: Ensure this is set to `/` (Root).
 6. **Environment Variables**:
    - `PORT`: `5000` (or leave empty, Railway sets one automatically, code respects it)
    - `VITE_API_URL`: `/api/v1` (Optional: The code now defaults to relative path in production)
@@ -44,18 +42,3 @@ If you haven't set up Supabase yet:
 1. Create a project at [Supabase](https://supabase.com).
 2. Go to **Settings** -> **API** to copy your URL and Keys.
 3. Use the SQL Editor to run the migrations located in `supabase/migrations/`.
-
----
-
-## Troubleshooting
-
-### Vercel 404 on Refresh
-
-If you get 404 errors when refreshing pages like `/bookings`, ensure `client/vercel.json` exists with the rewrite rules.
-
-### CORS Errors
-
-If the frontend cannot talk to the backend:
-
-1. Check your Vercel URL (e.g., `https://dullstroom.vercel.app`).
-2. Update the backend `cors` configuration in `server/src/index.js` to allow this origin.
