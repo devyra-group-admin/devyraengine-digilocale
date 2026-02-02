@@ -29,7 +29,17 @@ router.get('/', (req, res) => {
   res.json({ message: 'Welcome to Dullstroom Digital API' });
 });
 
+// Serve static files from the client dist directory
+const clientDistPath = join(__dirname, '../../client/dist');
+app.use(express.static(clientDistPath));
+
+// API Routes
 app.use('/api/v1', router);
+
+// Handle SPA routing - serve index.html for all other routes
+app.get('*', (req, res) => {
+  res.sendFile(join(clientDistPath, 'index.html'));
+});
 
 // Start Server
 app.listen(PORT, () => {

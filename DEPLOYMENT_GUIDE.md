@@ -4,55 +4,36 @@ This guide describes how to deploy the Dullstroom Digital monorepo.
 
 ## Project Structure
 
-- **Frontend**: `client/` (Vite + React) -> Deploy to **Vercel**
-- **Backend**: `server/` (Node + Express) -> Deploy to **Railway** or **Render**
+- **Frontend**: `client/` (Vite + React) -> Built to static files, served by Backend.
+- **Backend**: `server/` (Node + Express) -> Serves API and Frontend.
+- **Platform**: **Railway** (Unified Deployment)
 
 ---
 
-## 1. Frontend Deployment (Vercel)
+## 1. Unified Deployment (Railway)
 
-Vercel is the recommended host for the frontend because it has native support for monorepos and Zero-Config deployments for Vite.
+We deploy the entire monorepo as a single service on Railway. The backend acts as the web server for both the API and the React frontend.
 
 ### Steps:
 
-1. Push your code to a Git provider (GitHub/GitLab/Bitbucket).
-2. Log in to [Vercel](https://vercel.com).
-3. Click **"Add New..."** -> **"Project"**.
-4. Import your `dullstroom-digital` repository.
+1. Push your code to a Git provider (GitHub).
+2. Log in to [Railway](https://railway.app).
+3. Click **"New Project"** -> **"Deploy from GitHub repo"**.
+4. Select your repository.
 5. **Configure Project**:
-   - **Framework Preset**: Vite
-   - **Root Directory**: Click "Edit" and select `client`.
-   - **Build Settings**: Vercel should auto-detect:
-     - Build Command: `npm run build`
-     - Output Directory: `dist`
+   - Railway will auto-detect the root `package.json`.
+   - **Build Command**: `npm run build` (This runs `npm run build --workspace=client`)
+   - **Start Command**: `npm start` (This runs `npm start --workspace=server`)
+   - **Root Directory**: Leave as `/` (Root).
 6. **Environment Variables**:
-   Add the following variables in the Vercel dashboard:
-   - `VITE_API_URL`: The URL of your deployed backend (e.g., `https://your-backend.railway.app/api/v1`)
-   - `VITE_SUPABASE_URL`: Your Supabase URL
-   - `VITE_SUPABASE_ANON_KEY`: Your Supabase Anon Key
+   - `PORT`: `5000` (or leave empty, Railway sets one automatically, code respects it)
+   - `VITE_API_URL`: `/api/v1` (Optional: The code now defaults to relative path in production)
+   - `DATABASE_URL`: Your PostgreSQL connection string.
+   - `SUPABASE_URL`: Your Supabase URL.
+   - `SUPABASE_SERVICE_KEY` / `ANON_KEY`: As needed.
 7. Click **Deploy**.
 
-> **Note**: The `client/vercel.json` file is already configured to handle SPA routing (redirecting all requests to `index.html`).
-
----
-
-## 2. Backend Deployment (Railway)
-
-Railway is excellent for Node.js backends and offers a seamless PostgreSQL integration if you choose to host your database there too.
-
-### Steps:
-
-1. Log in to [Railway](https://railway.app).
-2. Click **"New Project"** -> **"Deploy from GitHub repo"**.
-3. Select your repository.
-4. **Configure Monorepo**:
-   - Railway might ask required path. Set **Root Directory** to `server`.
-5. **Environment Variables**:
-   - `PORT`: `5000` (or leave empty, Railway sets one automatically)
-   - `DATABASE_URL`: Your PostgreSQL connection string (Supabase or Railway DB)
-   - `SUPABASE_URL`: Your Supabase URL
-   - `SUPABASE_SERVICE_KEY`: Your Supabase Service Role Key
-6. Click **Deploy**.
+> **Note**: The `server/src/index.js` file is configured to serve static files from `client/dist` and handle SPA routing (sending `index.html` for unknown routes).
 
 ---
 

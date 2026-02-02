@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run dev:*)",
+      "Bash(timeout:*)",
+      "Bash(npx vite --port 3000)",
+      "Bash(npx vite:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nImprove mobile UX and enhance main page UI\n\n- Add horizontal card carousel for map view \\(Airbnb-style\\)\n- Sync map markers with carousel cards on swipe\n- Create reusable UI components \\(BottomSheet, Skeleton, ImageWithFallback\\)\n- Enhance header with new logo design, weather, notifications\n- Add category filter chips and quick actions\n- Improve bottom navigation with animated indicators\n- Add smooth transitions and micro-animations\n- Better touch feedback and mobile gestures\n- Improve Community section with expandable category grid\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git push)"
+    ]
+  }
+}
