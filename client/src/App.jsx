@@ -7,7 +7,7 @@ import {
   Home, Utensils, Palette, TreePine, Coffee, ChevronRight, Sparkles
 } from 'lucide-react';
 import BookingsSection from './components/BookingsSection';
-import accommodations from './data/accommodations';
+import { getAccommodations } from './services/accommodationService';
 import { communityEvents, eventCategories } from './data/communityEvents';
 import { communityBoards, communityPosts } from './data/communityBoards';
 import CommunitySection from './components/CommunitySection';
@@ -18,6 +18,7 @@ const App = () => {
   // View Mode State
   const [viewMode, setViewMode] = useState('businesses');
   const [showMobileMap, setShowMobileMap] = useState(true);
+  const [accommodations, setAccommodations] = useState([]);
   const [selectedAccommodation, setSelectedAccommodation] = useState(null);
   const [selectedEventCategory, setSelectedEventCategory] = useState(null);
   const [selectedBoard, setSelectedBoard] = useState('local-events');
@@ -63,6 +64,7 @@ const App = () => {
   ];
 
   // Set default booking dates
+  // Set default booking dates and fetch accommodations
   useEffect(() => {
     const today = new Date();
     const tomorrow = new Date(today);
@@ -73,9 +75,16 @@ const App = () => {
     setCheckInDate(tomorrow.toISOString().split('T')[0]);
     setCheckOutDate(dayAfter.toISOString().split('T')[0]);
 
-    if (accommodations.length > 0 && window.innerWidth >= 768) {
-      setSelectedAccommodation(accommodations[0]);
-    }
+    const fetchData = async () => {
+      const data = await getAccommodations();
+      setAccommodations(data);
+      
+      if (data.length > 0 && window.innerWidth >= 768) {
+        setSelectedAccommodation(data[0]);
+      }
+    };
+
+    fetchData();
   }, []);
 
   return (
