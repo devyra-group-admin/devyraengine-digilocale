@@ -14,7 +14,10 @@ INSERT INTO public.categories (name, slug, icon, color, display_order) VALUES
   ('Retail & Gifts', 'retail-gifts', '🎁', '#e8b844', 3),
   ('Outdoor & Adventure', 'outdoor-adventure', '🏕️', '#6b8e4e', 4),
   ('Tourism & Attractions', 'tourism-attractions', '🎯', '#d4a853', 5),
-  ('Property & Real Estate', 'property-real-estate', '🏠', '#8b6f47', 6)
+  ('Property & Real Estate', 'property-real-estate', '🏠', '#8b6f47', 6),
+  ('Professional Services', 'professional-services', '🛠️', '#6f7f8f', 7),
+  ('Health, Education & Public Services', 'public-services', '🏥', '#4f7fa8', 8),
+  ('Hotel & Restaurant', 'hotel-restaurant', '🏨', '#b36f3a', 9)
 ON CONFLICT (slug) DO NOTHING;
 
 -- ============================================
@@ -31,6 +34,11 @@ DECLARE
   cat_outdoor UUID;
   cat_tourism UUID;
   cat_property UUID;
+  cat_services UUID;
+  cat_public UUID;
+  cat_hotel UUID;
+  default_lng DOUBLE PRECISION := 30.10243602023188;
+  default_lat DOUBLE PRECISION := -25.41682188170712;
 BEGIN
   SELECT id INTO cat_food FROM public.categories WHERE slug = 'food-drink';
   SELECT id INTO cat_accommodation FROM public.categories WHERE slug = 'accommodation';
@@ -38,8 +46,11 @@ BEGIN
   SELECT id INTO cat_outdoor FROM public.categories WHERE slug = 'outdoor-adventure';
   SELECT id INTO cat_tourism FROM public.categories WHERE slug = 'tourism-attractions';
   SELECT id INTO cat_property FROM public.categories WHERE slug = 'property-real-estate';
+  SELECT id INTO cat_services FROM public.categories WHERE slug = 'professional-services';
+  SELECT id INTO cat_public FROM public.categories WHERE slug = 'public-services';
+  SELECT id INTO cat_hotel FROM public.categories WHERE slug = 'hotel-restaurant';
 
-  -- Insert businesses
+  -- Official client list (January 2026 submissions)
   INSERT INTO public.businesses (
     name,
     slug,
@@ -47,144 +58,363 @@ BEGIN
     description,
     address,
     location,
-    images,
+    phone,
+    email,
+    website_url,
+    social_links,
+    metadata,
     is_featured,
     tier
   ) VALUES
   (
-    'Duck & Trout Restaurant',
-    'duck-trout-restaurant',
-    cat_food,
-    'Popular pub and restaurant on the main street.',
-    'Hugenote St, Dullstroom',
-    ST_SetSRID(ST_MakePoint(30.10037451338561, -25.42392769985406), 4326)::geography,
-    '["https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=300&fit=crop"]'::jsonb,
+    'The Dullstroom Inn',
+    'the-dullstroom-inn',
+    cat_accommodation,
+    NULL,
+    'Cnr Teding Von Berkhold and Oranje Nassau',
+    ST_SetSRID(ST_MakePoint(default_lng, default_lat), 4326)::geography,
+    '013 254 0071',
+    'shane@dullstroominn.co.za',
+    'https://dullstroominn.co.za',
+    '{"facebook":"The Dullstroom inn"}'::jsonb,
+    '{"contact_person":"The Dullstroom Inn Pub","interests":"Basic business listing;Featured placement on map;Promoting events or specials;Reaching tourists visiting Dullstroom"}'::jsonb,
     true,
     'featured'
   ),
   (
-    'Mrs Simpson''s',
-    'mrs-simpsons',
+    '10@Cherry Grove',
+    '10-cherry-grove',
+    cat_accommodation,
+    NULL,
+    'The Piazza Cherry Grove Centre - above Zest',
+    ST_SetSRID(ST_MakePoint(default_lng, default_lat), 4326)::geography,
+    '0836106122',
+    'nico.roos@yahoo.com',
+    NULL,
+    '{}'::jsonb,
+    '{"contact_person":"Elmarie Roos","interests":"Basic business listing;Featured placement on map;Promoting events or specials;Reaching tourists visiting Dullstroom"}'::jsonb,
+    true,
+    'featured'
+  ),
+  (
+    'Donut World Dullstroom',
+    'donut-world-dullstroom',
     cat_food,
-    'Cozy restaurant with local cuisine.',
-    'Main Street, Dullstroom',
-    ST_SetSRID(ST_MakePoint(30.107736413385332, -25.41545673927404), 4326)::geography,
-    '["https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400&h=300&fit=crop"]'::jsonb,
-    false,
-    'basic'
+    NULL,
+    'Cherry Grove, Dullstroom',
+    ST_SetSRID(ST_MakePoint(default_lng, default_lat), 4326)::geography,
+    '0814991290',
+    'juan@brilliantconsultants.co.za',
+    NULL,
+    '{"facebook":"Donut World Dullstroom"}'::jsonb,
+    '{"contact_person":"Juan","interests":"Basic business listing;Featured placement on map;Promoting events or specials;Reaching tourists visiting Dullstroom"}'::jsonb,
+    true,
+    'featured'
   ),
   (
-    'Critchley Hackle Lodge',
-    'critchley-hackle-lodge',
-    cat_accommodation,
-    'Luxury lodge with scenic views.',
-    'Dullstroom Area',
-    ST_SetSRID(ST_MakePoint(30.109825753861376, -25.418347743222068), 4326)::geography,
-    '["https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=300&fit=crop"]'::jsonb,
-    false,
-    'premium'
-  ),
-  (
-    'Dullstroom Inn',
-    'dullstroom-inn',
-    cat_accommodation,
-    'Historic inn in the heart of town.',
-    'Central Dullstroom',
-    ST_SetSRID(ST_MakePoint(30.10727345386131, -25.41494493857514), 4326)::geography,
-    '["https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=400&h=300&fit=crop"]'::jsonb,
-    false,
-    'basic'
-  ),
-  (
-    'Earth Gear',
-    'earth-gear',
-    cat_retail,
-    'Outdoor equipment and gifts.',
-    'Shopping District',
-    ST_SetSRID(ST_MakePoint(30.11013720528195, -25.413330763950693), 4326)::geography,
-    '["https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?w=400&h=300&fit=crop"]'::jsonb,
-    false,
-    'basic'
-  ),
-  (
-    'Mavungana',
-    'mavungana',
-    cat_accommodation,
-    'Comfortable accommodation with mountain views.',
-    'Dullstroom',
-    ST_SetSRID(ST_MakePoint(30.10008468454961, -25.424415320795934), 4326)::geography,
-    '["https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=400&h=300&fit=crop"]'::jsonb,
-    false,
-    'basic'
-  ),
-  (
-    'Kosmas Stationery & Gift',
-    'kosmas-stationery-gift',
-    cat_retail,
-    'Stationery and unique gift items.',
-    'Main Street, Dullstroom',
-    ST_SetSRID(ST_MakePoint(30.104644628018615, -25.412152156571196), 4326)::geography,
-    '["https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=400&h=300&fit=crop"]'::jsonb,
-    false,
-    'basic'
-  ),
-  (
-    'Birchcroft Preparatory School',
-    'birchcroft-preparatory-school',
-    cat_tourism,
-    'Local educational institution.',
-    'Dullstroom',
-    ST_SetSRID(ST_MakePoint(30.10588185006474, -25.41395311554934), 4326)::geography,
-    '["https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=400&h=300&fit=crop"]'::jsonb,
-    false,
-    'basic'
-  ),
-  (
-    'The Montreo School',
-    'the-montreo-school',
-    cat_tourism,
-    'Private school in the highlands.',
-    'Dullstroom Area',
-    ST_SetSRID(ST_MakePoint(30.101963360852068, -25.411059606266303), 4326)::geography,
-    '["https://images.unsplash.com/photo-1509062522246-3755977927d7?w=400&h=300&fit=crop"]'::jsonb,
-    false,
-    'basic'
-  ),
-  (
-    'Barlack Attorneys',
-    'barlack-attorneys',
-    cat_property,
-    'Legal services and property consultation.',
-    'Dullstroom',
-    ST_SetSRID(ST_MakePoint(30.106519790495973, -25.41535905346672), 4326)::geography,
-    '["https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&h=300&fit=crop"]'::jsonb,
-    false,
-    'basic'
-  ),
-  (
-    'Zest Property Group',
-    'zest-property-group',
-    cat_property,
-    'Real estate services and property management.',
-    'Dullstroom',
-    ST_SetSRID(ST_MakePoint(30.10289628896996, -25.41526686131065), 4326)::geography,
-    '["https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400&h=300&fit=crop"]'::jsonb,
-    false,
-    'basic'
-  ),
-  (
-    'Farms, Lodges & Estates',
-    'farms-lodges-estates',
+    'Dullstroom Riding Centre',
+    'dullstroom-riding-centre',
     cat_outdoor,
-    'Experience farm life and outdoor activities.',
-    'Dullstroom',
-    ST_SetSRID(ST_MakePoint(30.103432158910046, -25.42142053247414), 4326)::geography,
-    '["https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=400&h=300&fit=crop"]'::jsonb,
+    NULL,
+    'Walkersons Private Estate',
+    ST_SetSRID(ST_MakePoint(default_lng, default_lat), 4326)::geography,
+    '0824429766',
+    'horsetrails@worldonline.co.za',
+    'https://www.dullstroomhorseriding.co.za',
+    '{}'::jsonb,
+    '{"contact_person":"Dave Curtis","interests":"Basic business listing;Featured placement on map;Reaching tourists visiting Dullstroom"}'::jsonb,
+    true,
+    'featured'
+  ),
+  (
+    'Cherry Lane @ Cherry Grove',
+    'cherry-lane-at-cherry-grove',
+    cat_accommodation,
+    NULL,
+    '9 Naledi Drive, Dullstroom',
+    ST_SetSRID(ST_MakePoint(default_lng, default_lat), 4326)::geography,
+    '0824586104',
+    'info@dullstroomactivities.com',
+    NULL,
+    '{}'::jsonb,
+    '{"contact_person":"Karin Metz","interests":"Basic business listing;Featured placement on map;Reaching tourists visiting Dullstroom"}'::jsonb,
+    true,
+    'featured'
+  ),
+  (
+    'Dullstroom Framing',
+    'dullstroom-framing',
+    cat_services,
+    NULL,
+    '207 Blue Crane Drive',
+    ST_SetSRID(ST_MakePoint(default_lng, default_lat), 4326)::geography,
+    '0722607527',
+    'chantel@dullstroom.net',
+    NULL,
+    '{}'::jsonb,
+    '{"contact_person":"Chantel Boshoff","interests":"Basic business listing;Featured placement on map"}'::jsonb,
+    true,
+    'featured'
+  ),
+  (
+    'Fairstream 1',
+    'fairstream-1',
+    cat_accommodation,
+    NULL,
+    'Janson Street, Dullstroom',
+    ST_SetSRID(ST_MakePoint(default_lng, default_lat), 4326)::geography,
+    '0829331011',
+    'sanibonani@sanibonanigroup.co.za',
+    NULL,
+    '{}'::jsonb,
+    '{"contact_person":"Linda Pieters","interests":"Basic business listing;Featured placement on map;Reaching tourists visiting Dullstroom"}'::jsonb,
+    true,
+    'featured'
+  ),
+  (
+    'Big Oak Cottages',
+    'big-oak-cottages',
+    cat_accommodation,
+    NULL,
+    '28 Eagle Avenue, Dullstroom',
+    ST_SetSRID(ST_MakePoint(default_lng, default_lat), 4326)::geography,
+    '0832659900',
+    'reservations@bigiakcottages.co.za',
+    'https://www.bigiakcottages.co.za',
+    '{}'::jsonb,
+    '{"contact_person":"Gail Trollip","interests":"Basic business listing"}'::jsonb,
+    false,
+    'basic'
+  ),
+  (
+    'Dullstroom Bird of Prey and Rehabilitation Centre',
+    'dullstroom-bird-of-prey-and-rehabilitation-centre',
+    cat_tourism,
+    NULL,
+    'Crn R540 Kruisfontein road, Dullstroom',
+    ST_SetSRID(ST_MakePoint(default_lng, default_lat), 4326)::geography,
+    '0828994108',
+    'info@wildlifesos.co.za',
+    'https://www.birdsofprey.co.za',
+    '{"instagram":"@dullstroombirdsofprey"}'::jsonb,
+    '{"contact_person":"Frith Douglas","interests":"Reaching tourists visiting Dullstroom"}'::jsonb,
+    false,
+    'basic'
+  ),
+  (
+    'The Dullstroom Inn',
+    'the-dullstroom-inn-hotel-restaurant',
+    cat_hotel,
+    NULL,
+    '196 Teding van Berkhout street',
+    ST_SetSRID(ST_MakePoint(default_lng, default_lat), 4326)::geography,
+    '013 254 0071',
+    'bookings@dullstroominn.co.za',
+    'https://dullstroominn.co.za/',
+    '{"facebook":"https://www.facebook.com/thedullstroominn"}'::jsonb,
+    '{"contact_person":"Johnny/ Kaylyn","interests":"Basic business listing;Featured placement on map;Promoting events or specials;Reaching tourists visiting Dullstroom"}'::jsonb,
+    true,
+    'featured'
+  ),
+  (
+    'Connemara Close Country Estate',
+    'connemara-close-country-estate',
+    cat_accommodation,
+    NULL,
+    'Lesedi street, Dullstroom',
+    ST_SetSRID(ST_MakePoint(default_lng, default_lat), 4326)::geography,
+    '071 173 7023',
+    'bookings@dullstroominn.co.za',
+    'https://connemara-close.co.za/',
+    '{"facebook":"https://www.facebook.com/profile.php?id=61575792519452"}'::jsonb,
+    '{"contact_person":"Kaylyn","interests":"Basic business listing;Featured placement on map;Reaching tourists visiting Dullstroom"}'::jsonb,
+    true,
+    'featured'
+  ),
+  (
+    'Jocks Cottages',
+    'jocks-cottages',
+    cat_accommodation,
+    NULL,
+    'Groot Suikerboschkop',
+    ST_SetSRID(ST_MakePoint(default_lng, default_lat), 4326)::geography,
+    '071 672 6761',
+    'info@jockscottages.co.za',
+    'https://www.jockscottages.co.za',
+    '{"facebook":"Jocks Cottages"}'::jsonb,
+    '{"contact_person":"Jeanne Badenhorst - Booking Manager","interests":"Basic business listing;Featured placement on map;Reaching tourists visiting Dullstroom"}'::jsonb,
+    true,
+    'featured'
+  ),
+  (
+    'i-Health Clinics',
+    'i-health-clinics',
+    cat_public,
+    NULL,
+    '488 Blue Crane Drive, Dullstroom, 1110',
+    ST_SetSRID(ST_MakePoint(default_lng, default_lat), 4326)::geography,
+    '071 156 1771',
+    'reception@ihealthclinics.co.za',
+    'https://www.ihealthclinics.co.za',
+    '{}'::jsonb,
+    '{"contact_person":"i-Health","interests":"Basic business listing;Featured placement on map;Promoting events or specials;Reaching tourists visiting Dullstroom"}'::jsonb,
+    true,
+    'featured'
+  ),
+  (
+    'Thembalethu Farm House',
+    'thembalethu-farm-house',
+    cat_accommodation,
+    NULL,
+    '"Old Skooltjie" Elandsfontein',
+    ST_SetSRID(ST_MakePoint(default_lng, default_lat), 4326)::geography,
+    '083 3382 280',
+    'sandradwurm@gmail.com',
+    'https://www.thembalethufarmhouse.co.za',
+    '{}'::jsonb,
+    '{"contact_person":"Sandra Wurm","interests":"Featured placement on map;Promoting events or specials;Reaching tourists visiting Dullstroom"}'::jsonb,
+    true,
+    'featured'
+  ),
+  (
+    'Skintopia',
+    'skintopia',
+    cat_retail,
+    'No',
+    '69 Naledi Drive, Bella Burano Centre',
+    ST_SetSRID(ST_MakePoint(default_lng, default_lat), 4326)::geography,
+    '0845134781',
+    'venessa@skintopia.co.za',
+    'https://www.skintopia.co.za',
+    '{"facebook":"Skintopia dullies"}'::jsonb,
+    '{"contact_person":"Venessa Brink","interests":"Basic business listing;Featured placement on map;Promoting events or specials;Reaching tourists visiting Dullstroom"}'::jsonb,
+    true,
+    'featured'
+  ),
+  (
+    'Saverite Arbees',
+    'saverite-arbees',
+    cat_retail,
+    NULL,
+    '565 Lesedi street',
+    ST_SetSRID(ST_MakePoint(default_lng, default_lat), 4326)::geography,
+    '0820994988',
+    'saveritearbees@gamil.com',
+    NULL,
+    '{"facebook":"Saveritearbees"}'::jsonb,
+    '{"contact_person":"Zuleikha","interests":"Basic business listing;Featured placement on map;Promoting events or specials;Reaching tourists visiting Dullstroom"}'::jsonb,
+    true,
+    'featured'
+  ),
+  (
+    'Plastic Fantastic',
+    'plastic-fantastic',
+    cat_retail,
+    NULL,
+    '228 Bluecrane drive',
+    ST_SetSRID(ST_MakePoint(default_lng, default_lat), 4326)::geography,
+    '0820994545',
+    'plasticfantastic25@gmail.com',
+    NULL,
+    '{"facebook":"Plasticfantastic"}'::jsonb,
+    '{"contact_person":"Amaan","interests":"Basic business listing;Featured placement on map;Promoting events or specials;Reaching tourists visiting Dullstroom"}'::jsonb,
+    true,
+    'featured'
+  ),
+  (
+    'Osman Arbee Hardware',
+    'osman-arbee-hardware',
+    cat_retail,
+    NULL,
+    '228 Bluecrane Drive',
+    ST_SetSRID(ST_MakePoint(default_lng, default_lat), 4326)::geography,
+    '0131360061',
+    'osmanarbee@gmail.com',
+    NULL,
+    '{}'::jsonb,
+    '{"contact_person":"Christo","interests":"Basic business listing;Featured placement on map;Promoting events or specials;Reaching tourists visiting Dullstroom"}'::jsonb,
+    true,
+    'featured'
+  ),
+  (
+    'The Smokey Owl',
+    'the-smokey-owl',
+    cat_retail,
+    NULL,
+    '83 Naledi drive',
+    ST_SetSRID(ST_MakePoint(default_lng, default_lat), 4326)::geography,
+    '0820994988',
+    'zuleikhag@gmail.com',
+    NULL,
+    '{}'::jsonb,
+    '{"contact_person":"Zuleikha","interests":"Basic business listing;Featured placement on map;Promoting events or specials;Reaching tourists visiting Dullstroom"}'::jsonb,
+    true,
+    'featured'
+  ),
+  (
+    'Dullstroom Station Antiques, Collectables & Books',
+    'dullstroom-station-antiques-collectables-books',
+    cat_tourism,
+    'Antiques, Collectables & Books plus tourist destination',
+    'Around the corner from The Old Dullstroom Mill - off Bosman Street',
+    ST_SetSRID(ST_MakePoint(default_lng, default_lat), 4326)::geography,
+    '082 550 9091',
+    'dullstroomsac@gmail.com',
+    NULL,
+    '{"note":"Yes. Both"}'::jsonb,
+    '{"contact_person":"Peter Hardy","interests":"Both business listing & tourist destination. Highest station in South Africa"}'::jsonb,
     false,
     'basic'
   )
-  ON CONFLICT (slug) DO NOTHING;
+  ON CONFLICT (slug) DO UPDATE
+  SET
+    category_id = EXCLUDED.category_id,
+    description = EXCLUDED.description,
+    address = EXCLUDED.address,
+    location = EXCLUDED.location,
+    phone = EXCLUDED.phone,
+    email = EXCLUDED.email,
+    website_url = EXCLUDED.website_url,
+    social_links = EXCLUDED.social_links,
+    metadata = EXCLUDED.metadata,
+    is_featured = EXCLUDED.is_featured,
+    tier = EXCLUDED.tier,
+    updated_at = NOW();
 END $$;
+
+-- ============================================
+-- Official client coordinates (Jan 2026)
+-- ============================================
+
+WITH coords(slug, lat, lon) AS (
+  VALUES
+    ('the-dullstroom-inn', -25.418505, 30.104493),
+    ('10-cherry-grove', -25.418505, 30.104493),
+    ('donut-world-dullstroom', -25.416700, 30.116699),
+    ('dullstroom-riding-centre', -25.418505, 30.104493),
+    ('cherry-lane-at-cherry-grove', -25.418505, 30.104493),
+    ('dullstroom-framing', -25.416406, 30.103602),
+    ('fairstream-1', -25.413306, 30.107536),
+    ('big-oak-cottages', -25.418505, 30.104493),
+    ('dullstroom-bird-of-prey-and-rehabilitation-centre', -25.444917, 30.109672),
+    ('the-dullstroom-inn-hotel-restaurant', -25.416078, 30.107814),
+    ('connemara-close-country-estate', -25.418897, 30.103358),
+    ('jocks-cottages', -25.418505, 30.104493),
+    ('i-health-clinics', -25.416406, 30.103602),
+    ('thembalethu-farm-house', -25.418505, 30.104493),
+    ('skintopia', -25.418505, 30.104493),
+    ('saverite-arbees', -25.418897, 30.103358),
+    ('plastic-fantastic', -25.416406, 30.103602),
+    ('osman-arbee-hardware', -25.416406, 30.103602),
+    ('the-smokey-owl', -25.418505, 30.104493),
+    ('dullstroom-station-antiques-collectables-books', -25.423906, 30.100853)
+)
+UPDATE public.businesses b
+SET
+  location = ST_SetSRID(ST_MakePoint(c.lon, c.lat), 4326)::geography,
+  updated_at = NOW()
+FROM coords c
+WHERE b.slug = c.slug;
 
 -- ============================================
 -- COMMUNITY BOARDS
@@ -296,14 +526,50 @@ ON CONFLICT (slug) DO NOTHING;
 -- Comments
 -- ============================================
 
+INSERT INTO public.town_branding (
+  slug,
+  town_name,
+  app_name,
+  tagline,
+  logo_url,
+  hero_url,
+  primary_color,
+  secondary_color,
+  accent_color,
+  metadata
+)
+VALUES (
+  'dullstroom',
+  'Dullstroom',
+  'Digital',
+  'Building a modern digital heart for our town',
+  '/branding/logo-square.svg',
+  '/branding/hero-banner.svg',
+  '#2f4a2f',
+  '#3b77c4',
+  '#e58a2a',
+  '{"location_label":"Mpumalanga, South Africa","banner_badge":"Official Town Guide"}'::jsonb
+)
+ON CONFLICT (slug) DO UPDATE
+SET
+  town_name = EXCLUDED.town_name,
+  app_name = EXCLUDED.app_name,
+  tagline = EXCLUDED.tagline,
+  logo_url = EXCLUDED.logo_url,
+  hero_url = EXCLUDED.hero_url,
+  primary_color = EXCLUDED.primary_color,
+  secondary_color = EXCLUDED.secondary_color,
+  accent_color = EXCLUDED.accent_color,
+  metadata = EXCLUDED.metadata,
+  updated_at = NOW();
+
 -- The database is now seeded with:
--- - 6 business categories
--- - 12 sample businesses (from existing App.jsx)
+-- - 9 business categories
+-- - 20 official client businesses (Jan 2026 list)
 -- - 6 main community boards
 -- - 3 sub-group boards
 --
 -- Next steps:
--- 1. Create Supabase project at supabase.com
--- 2. Run these migrations in order (001, 002, 003)
--- 3. Run this seed.sql file
--- 4. Create storage buckets: business-images, post-media, avatars
+-- 1. Run migrations in order (001, 002, 003)
+-- 2. Run this seed.sql file (or `npx supabase db reset` locally)
+-- 3. Create storage buckets: business-images, post-media, avatars

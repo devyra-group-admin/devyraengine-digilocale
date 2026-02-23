@@ -1,13 +1,131 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import BusinessImageUpload from './BusinessImageUpload';
+import BusinessLocationEditor from './BusinessLocationEditor';
+import { supabase } from '../services/supabaseClient';
 import { 
   Users, Building2, MessageSquare, DollarSign, BarChart3, 
   Settings, Shield, TrendingUp, FileText, AlertCircle,
-  CheckCircle, XCircle, Eye, Trash2, Edit, Search
+  CheckCircle, XCircle, Eye, Trash2, Edit, Search, Save, MapPin
 } from 'lucide-react';
 
-const AdminPanel = () => {
+const EMPTY_TOWN_BRANDING = {
+  slug: '',
+  town_name: '',
+  app_name: 'Digital',
+  tagline: '',
+  logo_url: '',
+  hero_url: '',
+  primary_color: '#2f4a2f',
+  secondary_color: '#3b77c4',
+  accent_color: '#e58a2a',
+  is_active: true,
+  metadata: {
+    location_label: '',
+    banner_badge: '',
+  },
+};
+
+function parseEwkbPoint(ewkb) {
+  if (!ewkb || typeof ewkb !== 'string') return null;
+  const hex = ewkb.startsWith('\\x') ? ewkb.slice(2) : ewkb;
+  if (hex.length < 18 || hex.length % 2 !== 0 || !/^[0-9a-fA-F]+$/.test(hex)) return null;
+
+  const bytes = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < bytes.length; i += 1) {
+    bytes[i] = Number.parseInt(hex.slice(i * 2, i * 2 + 2), 16);
+  }
+
+  const view = new DataView(bytes.buffer);
+  const littleEndian = view.getUint8(0) === 1;
+  const type = view.getUint32(1, littleEndian);
+  const hasSrid = (type & 0x20000000) !== 0;
+  const offset = hasSrid ? 9 : 5;
+
+  if (view.byteLength < offset + 16) return null;
+
+  const lng = view.getFloat64(offset, littleEndian);
+  const lat = view.getFloat64(offset + 8, littleEndian);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+
+  return [lat, lng];
+}
+
+const AdminPanel = ({ townSlug = 'dullstroom', branding = null }) => {
   const [activeTab, setActiveTab] = useState('overview');
-  const [showMobileSidebar, setShowMobileSidebar] = useState(false);
+  const [businesses, setBusinesses] = useState([]);
+  const [loadingBusinesses, setLoadingBusinesses] = useState(false);
+  const [editingLocationBusiness, setEditingLocationBusiness] = useState(null);
+  const [brandingRows, setBrandingRows] = useState([]);
+  const [selectedTownSlug, setSelectedTownSlug] = useState(townSlug);
+  const [brandingForm, setBrandingForm] = useState(EMPTY_TOWN_BRANDING);
+  const [loadingBranding, setLoadingBranding] = useState(false);
+  const [savingBranding, setSavingBranding] = useState(false);
+  const [brandingError, setBrandingError] = useState('');
+  const [brandingMessage, setBrandingMessage] = useState('');
+
+  const loadBusinesses = useCallback(async () => {
+    setLoadingBusinesses(true);
+    const { data } = await supabase.from('businesses').select('*');
+    setBusinesses(data || []);
+    setLoadingBusinesses(false);
+  }, []);
+
+  useEffect(() => {
+    if (activeTab !== 'businesses') return;
+    void loadBusinesses();
+  }, [activeTab, loadBusinesses]);
+
+  useEffect(() => {
+    if (activeTab !== 'settings') return;
+
+    let isMounted = true;
+    setLoadingBranding(true);
+    setBrandingError('');
+
+    supabase
+      .from('town_branding')
+      .select('*')
+      .order('town_name', { ascending: true })
+      .then(({ data, error }) => {
+        if (!isMounted) return;
+        if (error) {
+          setBrandingError(error.message);
+          setBrandingRows([]);
+          return;
+        }
+        const rows = data || [];
+        setBrandingRows(rows);
+
+        const preferredSlug = rows.some((row) => row.slug === selectedTownSlug)
+          ? selectedTownSlug
+          : rows.some((row) => row.slug === townSlug)
+            ? townSlug
+            : rows[0]?.slug || '';
+
+        if (preferredSlug) {
+          const current = rows.find((row) => row.slug === preferredSlug);
+          setSelectedTownSlug(preferredSlug);
+          setBrandingForm({
+            ...EMPTY_TOWN_BRANDING,
+            ...current,
+            metadata: {
+              ...EMPTY_TOWN_BRANDING.metadata,
+              ...(current?.metadata || {}),
+            },
+          });
+        } else {
+          setSelectedTownSlug('');
+          setBrandingForm(EMPTY_TOWN_BRANDING);
+        }
+      })
+      .finally(() => {
+        if (isMounted) setLoadingBranding(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [activeTab, selectedTownSlug, townSlug]);
 
   // Mock data
   const stats = {
@@ -31,13 +149,119 @@ const AdminPanel = () => {
     { id: 3, action: 'User upgraded to Partner tier', user: 'System', time: '2h ago' },
   ];
 
+  const handleTownSelection = (slug) => {
+    setSelectedTownSlug(slug);
+    setBrandingMessage('');
+    setBrandingError('');
+    if (!slug) {
+      setBrandingForm(EMPTY_TOWN_BRANDING);
+      return;
+    }
+    const row = brandingRows.find((item) => item.slug === slug);
+    if (!row) {
+      setBrandingForm(EMPTY_TOWN_BRANDING);
+      return;
+    }
+    setBrandingForm({
+      ...EMPTY_TOWN_BRANDING,
+      ...row,
+      metadata: {
+        ...EMPTY_TOWN_BRANDING.metadata,
+        ...(row.metadata || {}),
+      },
+    });
+  };
+
+  const handleBrandingFieldChange = (field, value) => {
+    setBrandingForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleBrandingMetadataChange = (field, value) => {
+    setBrandingForm((prev) => ({
+      ...prev,
+      metadata: {
+        ...prev.metadata,
+        [field]: value,
+      },
+    }));
+  };
+
+  const handleCreateTown = () => {
+    setSelectedTownSlug('');
+    setBrandingMessage('');
+    setBrandingError('');
+    setBrandingForm(EMPTY_TOWN_BRANDING);
+  };
+
+  const handleSaveBranding = async () => {
+    const slug = String(brandingForm.slug || '').trim().toLowerCase();
+    const townName = String(brandingForm.town_name || '').trim();
+    const appName = String(brandingForm.app_name || '').trim() || 'Digital';
+
+    if (!slug || !townName) {
+      setBrandingError('Town slug and town name are required.');
+      return;
+    }
+
+    setSavingBranding(true);
+    setBrandingError('');
+    setBrandingMessage('');
+
+    const payload = {
+      ...brandingForm,
+      slug,
+      town_name: townName,
+      app_name: appName,
+      metadata: brandingForm.metadata || {},
+    };
+
+    const { data, error } = await supabase
+      .from('town_branding')
+      .upsert(payload, { onConflict: 'slug' })
+      .select('*');
+
+    if (error) {
+      setBrandingError(error.message);
+      setSavingBranding(false);
+      return;
+    }
+
+    const rows = data || [];
+    if (rows.length > 0) {
+      const savedRow = rows[0];
+      setBrandingRows((prev) => {
+        const next = [...prev];
+        rows.forEach((row) => {
+          const idx = next.findIndex((item) => item.slug === row.slug);
+          if (idx >= 0) next[idx] = row;
+          else next.push(row);
+        });
+        return next.sort((a, b) => a.town_name.localeCompare(b.town_name));
+      });
+      setSelectedTownSlug(slug);
+      setBrandingForm({
+        ...EMPTY_TOWN_BRANDING,
+        ...savedRow,
+        metadata: {
+          ...EMPTY_TOWN_BRANDING.metadata,
+          ...(savedRow?.metadata || {}),
+        },
+      });
+    }
+
+    setBrandingMessage('Town branding saved.');
+    setSavingBranding(false);
+  };
+
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Sidebar - Hidden on mobile, visible on desktop */}
       <div className="hidden md:flex w-64 bg-gray-900 text-white flex-col">
         <div className="p-6 border-b border-gray-800">
-          <h1 className="text-xl font-bold">Admin Panel</h1>
-          <p className="text-gray-400 text-sm">Dullstroom Digital</p>
+          <h1 className="text-xl font-bold">Super Admin</h1>
+          <p className="text-gray-400 text-sm">
+            {branding?.townName || 'Town'} {branding?.appName || 'Digital'}
+          </p>
         </div>
 
         <nav className="flex-1 p-4 space-y-2">
@@ -327,7 +551,7 @@ const AdminPanel = () => {
             </div>
           )}
 
-          {activeTab !== 'overview' && activeTab !== 'users' && activeTab !== 'businesses' && (
+          {['content', 'subscriptions', 'analytics'].includes(activeTab) && (
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-12 text-center">
               <div className="max-w-md mx-auto">
                 <div className="bg-gray-100 rounded-full p-4 inline-block mb-4">
@@ -525,88 +749,288 @@ const AdminPanel = () => {
                 </div>
               </div>
 
-              {/* Businesses Table */}
+              {/* Businesses Table (from DB) */}
               <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gray-50 border-b border-gray-200">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Business</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Owner</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tier</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Listed</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {[
-                        { id: 1, name: 'The Highlander Restaurant', category: 'Restaurants', owner: 'John Smith', tier: 'Featured', status: 'Active', listed: '2024-01-10' },
-                        { id: 2, name: 'Dullstroom Gallery', category: 'Art & Culture', owner: 'Sarah Johnson', tier: 'Basic', status: 'Active', listed: '2024-02-15' },
-                        { id: 3, name: 'Mountain View Lodge', category: 'Accommodations', owner: 'Mike Wilson', tier: 'Partner', status: 'Active', listed: '2024-01-20' },
-                        { id: 4, name: 'Outdoors Equipment Shop', category: 'Shopping', owner: 'Emma Davis', tier: 'Free', status: 'Pending', listed: '2024-03-10' },
-                        { id: 5, name: 'Fishing Tours Pro', category: 'Activities', owner: 'Tom Brown', tier: 'Basic', status: 'Inactive', listed: '2023-12-05' },
-                      ].map((business) => (
-                        <tr key={business.id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                              <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                                <Building2 size={20} className="text-purple-600" />
-                              </div>
-                              <div className="ml-3">
-                                <p className="text-sm font-medium text-gray-900">{business.name}</p>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{business.category}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{business.owner}</td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                              business.tier === 'Partner' ? 'bg-indigo-100 text-indigo-700' :
-                              business.tier === 'Featured' ? 'bg-purple-100 text-purple-700' :
-                              business.tier === 'Basic' ? 'bg-blue-100 text-blue-700' :
-                              'bg-gray-100 text-gray-700'
-                            }`}>
-                              {business.tier}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                              business.status === 'Active' ? 'bg-green-100 text-green-700' :
-                              business.status === 'Pending' ? 'bg-amber-100 text-amber-700' :
-                              'bg-red-100 text-red-700'
-                            }`}>
-                              {business.status}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{business.listed}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm space-x-2">
-                            <button className="text-blue-600 hover:text-blue-800" title="View">
-                              <Eye size={16} />
-                            </button>
-                            <button className="text-green-600 hover:text-green-800" title="Approve">
-                              <CheckCircle size={16} />
-                            </button>
-                            <button className="text-teal-600 hover:text-teal-800" title="Edit">
-                              <Edit size={16} />
-                            </button>
-                            <button className="text-red-600 hover:text-red-800" title="Delete">
-                              <Trash2 size={16} />
-                            </button>
-                          </td>
+                  {loadingBusinesses ? (
+                    <div className="p-8 text-center text-gray-400">Loading businesses...</div>
+                  ) : (
+                    <table className="w-full">
+                      <thead className="bg-gray-50 border-b border-gray-200">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Business</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tier</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Coordinates</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Images</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {businesses.map((business) => {
+                          const coords = parseEwkbPoint(business.location);
+                          return (
+                          <tr key={business.id} className="hover:bg-gray-50">
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex items-center">
+                                <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                                  <Building2 size={20} className="text-purple-600" />
+                                </div>
+                                <div className="ml-3">
+                                  <p className="text-sm font-medium text-gray-900">{business.name}</p>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{business.category_id}</td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-700">
+                                {business.tier}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-600">
+                              {coords ? `${coords[0].toFixed(5)}, ${coords[1].toFixed(5)}` : 'No pin set'}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <BusinessImageUpload
+                                businessId={business.id}
+                                images={business.images || []}
+                                onImagesChange={(imgs) => {
+                                  setBusinesses((prev) => prev.map((b) => b.id === business.id ? { ...b, images: imgs } : b));
+                                }}
+                              />
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm space-x-2">
+                              <button
+                                type="button"
+                                onClick={() => setEditingLocationBusiness(business)}
+                                className="text-emerald-600 hover:text-emerald-800"
+                                title="Pin on map"
+                              >
+                                <MapPin size={16} />
+                              </button>
+                              <button className="text-blue-600 hover:text-blue-800" title="View">
+                                <Eye size={16} />
+                              </button>
+                              <button className="text-teal-600 hover:text-teal-800" title="Edit">
+                                <Edit size={16} />
+                              </button>
+                              <button className="text-red-600 hover:text-red-800" title="Delete">
+                                <Trash2 size={16} />
+                              </button>
+                            </td>
+                          </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  )}
                 </div>
-                <div className="bg-gray-50 px-6 py-3 border-t border-gray-200 flex items-center justify-between">
-                  <p className="text-sm text-gray-600">Showing 1 to 5 of 89 businesses</p>
-                  <div className="flex space-x-2">
-                    <button className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-100">Previous</button>
-                    <button className="px-3 py-1 bg-teal-600 text-white rounded">1</button>
-                    <button className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-100">2</button>
-                    <button className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-100">Next</button>
+              </div>
+            </div>
+          )}
+
+          {/* Town Branding Settings */}
+          {activeTab === 'settings' && (
+            <div className="space-y-6">
+              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900">Town Branding</h3>
+                    <p className="text-sm text-gray-500">
+                      Configure logos, hero banners, colors, and taglines per town.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleCreateTown}
+                    className="inline-flex items-center justify-center px-4 py-2 rounded-lg border border-gray-300 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                  >
+                    New Town
+                  </button>
+                </div>
+
+                {loadingBranding && (
+                  <div className="mt-4 text-sm text-gray-500">Loading town branding...</div>
+                )}
+
+                {brandingError && (
+                  <div className="mt-4 rounded-lg border border-red-200 bg-red-50 text-red-700 px-4 py-3 text-sm">
+                    {brandingError}
+                  </div>
+                )}
+
+                {brandingMessage && (
+                  <div className="mt-4 rounded-lg border border-green-200 bg-green-50 text-green-700 px-4 py-3 text-sm">
+                    {brandingMessage}
+                  </div>
+                )}
+
+                <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <div className="space-y-3">
+                    <label className="block text-sm font-medium text-gray-700">Choose Town</label>
+                    <select
+                      value={selectedTownSlug}
+                      onChange={(e) => handleTownSelection(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    >
+                      <option value="">Select a town</option>
+                      {brandingRows.map((row) => (
+                        <option key={row.slug} value={row.slug}>
+                          {row.town_name} ({row.slug})
+                        </option>
+                      ))}
+                    </select>
+
+                    <div className="rounded-lg border border-gray-200 p-3 bg-gray-50">
+                      <p className="text-xs text-gray-500">Live Preview</p>
+                      <div className="mt-2 flex items-center gap-2">
+                        <img
+                          src={brandingForm.logo_url || branding?.logoUrl || '/branding/logo-square.svg'}
+                          alt="Town logo preview"
+                          className="w-10 h-10 rounded-lg object-cover border border-gray-200 bg-white"
+                        />
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-gray-900 truncate">
+                            {brandingForm.town_name || brandingForm.slug || 'Town'}
+                          </p>
+                          <p className="text-xs text-gray-500 truncate">
+                            {brandingForm.app_name || 'Digital'} · {brandingForm.tagline || 'Tagline'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Town Slug</label>
+                      <input
+                        type="text"
+                        value={brandingForm.slug}
+                        onChange={(e) => handleBrandingFieldChange('slug', e.target.value.toLowerCase().replace(/\s+/g, '-'))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                        placeholder="e.g. dullstroom"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Town Name</label>
+                      <input
+                        type="text"
+                        value={brandingForm.town_name}
+                        onChange={(e) => handleBrandingFieldChange('town_name', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                        placeholder="Town display name"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">App Label</label>
+                      <input
+                        type="text"
+                        value={brandingForm.app_name}
+                        onChange={(e) => handleBrandingFieldChange('app_name', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                        placeholder="Digital"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Tagline</label>
+                      <input
+                        type="text"
+                        value={brandingForm.tagline}
+                        onChange={(e) => handleBrandingFieldChange('tagline', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                        placeholder="Town tagline"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Logo URL</label>
+                      <input
+                        type="text"
+                        value={brandingForm.logo_url}
+                        onChange={(e) => handleBrandingFieldChange('logo_url', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                        placeholder="https://.../logo.png"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Hero URL</label>
+                      <input
+                        type="text"
+                        value={brandingForm.hero_url}
+                        onChange={(e) => handleBrandingFieldChange('hero_url', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                        placeholder="https://.../hero.jpg"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Primary Color</label>
+                      <input
+                        type="text"
+                        value={brandingForm.primary_color}
+                        onChange={(e) => handleBrandingFieldChange('primary_color', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                        placeholder="#2f4a2f"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Secondary Color</label>
+                      <input
+                        type="text"
+                        value={brandingForm.secondary_color}
+                        onChange={(e) => handleBrandingFieldChange('secondary_color', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                        placeholder="#3b77c4"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Accent Color</label>
+                      <input
+                        type="text"
+                        value={brandingForm.accent_color}
+                        onChange={(e) => handleBrandingFieldChange('accent_color', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                        placeholder="#e58a2a"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Location Label</label>
+                      <input
+                        type="text"
+                        value={brandingForm.metadata?.location_label || ''}
+                        onChange={(e) => handleBrandingMetadataChange('location_label', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                        placeholder="Mpumalanga, South Africa"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Banner Badge</label>
+                      <input
+                        type="text"
+                        value={brandingForm.metadata?.banner_badge || ''}
+                        onChange={(e) => handleBrandingMetadataChange('banner_badge', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                        placeholder="Official Town Guide"
+                      />
+                    </div>
+                    <div className="md:col-span-2 flex items-center justify-between pt-2">
+                      <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(brandingForm.is_active)}
+                          onChange={(e) => handleBrandingFieldChange('is_active', e.target.checked)}
+                        />
+                        Active
+                      </label>
+                      <button
+                        type="button"
+                        onClick={handleSaveBranding}
+                        disabled={savingBranding}
+                        className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-teal-600 text-white text-sm font-semibold hover:bg-teal-700 disabled:opacity-60"
+                      >
+                        <Save size={16} />
+                        {savingBranding ? 'Saving...' : 'Save Branding'}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -614,6 +1038,16 @@ const AdminPanel = () => {
           )}
         </div>
       </div>
+
+      {editingLocationBusiness && (
+        <BusinessLocationEditor
+          business={editingLocationBusiness}
+          onClose={() => setEditingLocationBusiness(null)}
+          onSaved={async () => {
+            await loadBusinesses();
+          }}
+        />
+      )}
     </div>
   );
 };

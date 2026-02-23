@@ -1,81 +1,237 @@
-import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { Star, MapPin, Phone, Globe, Navigation, X, ZoomIn, ZoomOut, Heart, Share2, ChevronLeft, ChevronRight, List, Layers } from 'lucide-react';
+import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
+import { Star, MapPin, Phone, Globe, Navigation, X, ZoomIn, ZoomOut, Heart, Share2, ChevronLeft, ChevronRight, Layers, AlertCircle, CheckCircle2 } from 'lucide-react';
 import ImageWithFallback from './ui/ImageWithFallback';
+import { supabase } from '../services/supabaseClient';
 
-const BusinessesSection = ({ searchQuery, showMobileMap, setShowMobileMap, selectedCategory }) => {
+const DEFAULT_MAP_CENTER = {
+  lat: Number(import.meta.env.VITE_MAP_CENTER_LAT || -25.41682188170712),
+  lng: Number(import.meta.env.VITE_MAP_CENTER_LNG || 30.10243602023188),
+};
+
+const FALLBACK_IMAGES = {
+  accommodation: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&h=500&fit=crop',
+  'food-drink': 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&h=500&fit=crop',
+  'retail-gifts': 'https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?w=800&h=500&fit=crop',
+  'outdoor-adventure': 'https://images.unsplash.com/photo-1472396961693-142e6e269027?w=800&h=500&fit=crop',
+  'tourism-attractions': 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800&h=500&fit=crop',
+  'professional-services': 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=800&h=500&fit=crop',
+  'public-services': 'https://images.unsplash.com/photo-1584982751601-97dcc096659c?w=800&h=500&fit=crop',
+  'hotel-restaurant': 'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=800&h=500&fit=crop',
+  default: 'https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=800&h=500&fit=crop',
+};
+
+function normalizeWebsiteUrl(url) {
+  if (!url) return null;
+  const trimmed = String(url).trim();
+  if (!trimmed) return null;
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed;
+  return `https://${trimmed}`;
+}
+
+function parseEwkbPoint(ewkb) {
+  if (!ewkb || typeof ewkb !== 'string') return null;
+  const hex = ewkb.startsWith('\\x') ? ewkb.slice(2) : ewkb;
+  if (hex.length < 18 || hex.length % 2 !== 0 || !/^[0-9a-fA-F]+$/.test(hex)) return null;
+
+  const bytes = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < bytes.length; i += 1) {
+    bytes[i] = Number.parseInt(hex.slice(i * 2, i * 2 + 2), 16);
+  }
+
+  const view = new DataView(bytes.buffer);
+  const littleEndian = view.getUint8(0) === 1;
+  const type = view.getUint32(1, littleEndian);
+  const hasSrid = (type & 0x20000000) !== 0;
+  const offset = hasSrid ? 9 : 5;
+
+  if (view.byteLength < offset + 16) return null;
+
+  const lng = view.getFloat64(offset, littleEndian);
+  const lat = view.getFloat64(offset + 8, littleEndian);
+
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  return [lat, lng];
+}
+
+function toPlace(row) {
+  const categorySlug = row.category?.slug || 'default';
+  const parsedPoint = parseEwkbPoint(row.location);
+  const defaultPosition = [DEFAULT_MAP_CENTER.lat, DEFAULT_MAP_CENTER.lng];
+  const firstImage = Array.isArray(row.images) && row.images.length > 0 ? row.images[0] : null;
+
+  return {
+    id: row.id,
+    name: row.name || 'Unnamed Business',
+    description: row.description || 'No description yet.',
+    category: row.category?.name || 'Local Business',
+    categorySlug,
+    address: row.address || 'Dullstroom',
+    position: parsedPoint || defaultPosition,
+    photo: firstImage || FALLBACK_IMAGES[categorySlug] || FALLBACK_IMAGES.default,
+    rating: Number(row.rating || 0),
+    reviews: Number(row.review_count || 0),
+    website: normalizeWebsiteUrl(row.website_url),
+    phone: row.phone || '',
+    tier: row.tier || 'basic',
+    isFeatured: Boolean(row.is_featured),
+  };
+}
+
+const BusinessesSection = ({
+  searchQuery,
+  showMobileMap,
+  setShowMobileMap,
+  selectedCategory,
+  branding = null,
+}) => {
   const [selectedBusiness, setSelectedBusiness] = useState(null);
   const [hoveredBusiness, setHoveredBusiness] = useState(null);
   const [favorites, setFavorites] = useState([]);
   const [activeCardIndex, setActiveCardIndex] = useState(0);
   const [showDetails, setShowDetails] = useState(false);
+  const [places, setPlaces] = useState([]);
+  const [loadingPlaces, setLoadingPlaces] = useState(true);
+  const [placesError, setPlacesError] = useState('');
+  const [refreshToast, setRefreshToast] = useState('');
+  const [reloadToken, setReloadToken] = useState(0);
+  const reloadDebounceRef = useRef(null);
+  const reloadToastRef = useRef(null);
+  const toastHideRef = useRef(null);
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markersRef = useRef([]);
   const carouselRef = useRef(null);
-  const [leafletLoaded, setLeafletLoaded] = useState(false);
+  const [leafletLoaded, setLeafletLoaded] = useState(
+    () => typeof window !== 'undefined' && typeof window.L !== 'undefined'
+  );
 
-  // Business data
-  const places = [
-    {
-      id: 1,
-      name: "The Highlander Restaurant",
-      description: "Family-owned restaurant serving authentic South African cuisine with stunning mountain views",
-      category: "Restaurants",
-      address: "12 Hugenote St, Dullstroom, 1110",
-      position: [-25.4175, 30.1544],
-      photo: "https://images.unsplash.com/photo-1552566063-32e6af5d4bb8?w=400",
-      rating: 4.7,
-      reviews: 127,
-      website: "https://highlander.co.za",
-      phone: "+27 13 254 0031"
-    },
-    {
-      id: 2,
-      name: "Dullstroom Gallery",
-      description: "Local art gallery featuring South African artists and handcrafted goods",
-      category: "Art & Culture",
-      address: "8 Tedderfield Rd, Dullstroom, 1110",
-      position: [-25.4190, 30.1520],
-      photo: "https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=400",
-      rating: 4.5,
-      reviews: 63,
-      phone: "+27 13 254 0142"
-    },
-    {
-      id: 3,
-      name: "Trout Triangle Adventures",
-      description: "Guided fishing tours and outdoor adventures in the Dullstroom area",
-      category: "Activities",
-      address: "15 Dam Rd, Dullstroom, 1110",
-      position: [-25.4160, 30.1580],
-      photo: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=400",
-      rating: 4.8,
-      reviews: 89,
-      website: "https://trout-adventures.co.za",
-      phone: "+27 13 254 0089"
-    }
-  ];
-
-  const mapCenter = [-25.4175, 30.1544];
+  const mapCenter = useMemo(() => [DEFAULT_MAP_CENTER.lat, DEFAULT_MAP_CENTER.lng], []);
   const mapZoom = 14;
+  const showToast = useCallback((message) => {
+    setRefreshToast(message);
+    if (toastHideRef.current) {
+      window.clearTimeout(toastHideRef.current);
+    }
+    toastHideRef.current = window.setTimeout(() => {
+      setRefreshToast('');
+      toastHideRef.current = null;
+    }, 2200);
+  }, []);
+
+  const queueReload = useCallback((options = {}) => {
+    const { showLiveToast = false, message = 'Listings updated just now' } = options;
+    if (showLiveToast) {
+      reloadToastRef.current = message;
+    }
+    if (reloadDebounceRef.current) {
+      window.clearTimeout(reloadDebounceRef.current);
+    }
+    reloadDebounceRef.current = window.setTimeout(() => {
+      setReloadToken((value) => value + 1);
+    }, 250);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (reloadDebounceRef.current) {
+        window.clearTimeout(reloadDebounceRef.current);
+      }
+      if (toastHideRef.current) {
+        window.clearTimeout(toastHideRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleBusinessesChanged = () =>
+      queueReload({ showLiveToast: true, message: 'Listings updated just now' });
+    window.addEventListener('businesses:changed', handleBusinessesChanged);
+    return () => {
+      window.removeEventListener('businesses:changed', handleBusinessesChanged);
+    };
+  }, [queueReload]);
+
+  useEffect(() => {
+    const channel = supabase
+      .channel('businesses-live-refresh')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'businesses' },
+        () => queueReload({ showLiveToast: true, message: 'Listings updated just now' })
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'categories' },
+        () => queueReload({ showLiveToast: true, message: 'Listings updated just now' })
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [queueReload]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchBusinesses = async () => {
+      setLoadingPlaces(true);
+      setPlacesError('');
+
+      const { data, error } = await supabase
+        .from('businesses')
+        .select('id,name,description,address,location,phone,website_url,images,rating,review_count,tier,is_featured,category:categories(name,slug)')
+        .eq('is_published', true)
+        .is('deleted_at', null)
+        .order('is_featured', { ascending: false })
+        .order('name', { ascending: true });
+
+      if (!isMounted) return;
+
+      if (error) {
+        setPlacesError(error.message);
+        setPlaces([]);
+        setLoadingPlaces(false);
+        return;
+      }
+
+      const mapped = (data || []).map((row) => toPlace(row));
+      setPlaces(mapped);
+      setLoadingPlaces(false);
+
+      if (reloadToastRef.current) {
+        showToast(reloadToastRef.current);
+        reloadToastRef.current = null;
+      }
+    };
+
+    void fetchBusinesses();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [reloadToken, showToast]);
 
   // Category mapping for filter
   const categoryMap = {
-    'restaurants': 'Restaurants',
-    'activities': 'Activities',
-    'arts': 'Art & Culture',
+    restaurants: ['food-drink', 'hotel-restaurant'],
+    stays: ['accommodation'],
+    activities: ['outdoor-adventure', 'tourism-attractions'],
+    arts: ['retail-gifts', 'professional-services', 'public-services'],
+    cafes: ['food-drink'],
   };
 
   // Filter businesses
   const filteredPlaces = places.filter(place => {
-    if (selectedCategory && categoryMap[selectedCategory]) {
-      if (place.category !== categoryMap[selectedCategory]) return false;
+    if (selectedCategory && categoryMap[selectedCategory]?.length) {
+      if (!categoryMap[selectedCategory].includes(place.categorySlug)) return false;
     }
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
     return place.name.toLowerCase().includes(query) ||
       place.description.toLowerCase().includes(query) ||
-      place.category.toLowerCase().includes(query);
+      place.category.toLowerCase().includes(query) ||
+      (place.address || '').toLowerCase().includes(query);
   });
 
   // Toggle favorite
@@ -143,10 +299,7 @@ const BusinessesSection = ({ searchQuery, showMobileMap, setShowMobileMap, selec
 
   // Load Leaflet
   useEffect(() => {
-    if (typeof window.L !== 'undefined') {
-      setLeafletLoaded(true);
-      return;
-    }
+    if (leafletLoaded) return;
 
     const loadLeaflet = async () => {
       try {
@@ -177,7 +330,7 @@ const BusinessesSection = ({ searchQuery, showMobileMap, setShowMobileMap, selec
     };
 
     loadLeaflet();
-  }, []);
+  }, [leafletLoaded]);
 
   // Initialize map
   useEffect(() => {
@@ -211,7 +364,7 @@ const BusinessesSection = ({ searchQuery, showMobileMap, setShowMobileMap, selec
         mapInstanceRef.current = null;
       }
     };
-  }, [leafletLoaded]);
+  }, [leafletLoaded, mapCenter, mapZoom]);
 
   // ResizeObserver
   useEffect(() => {
@@ -221,7 +374,7 @@ const BusinessesSection = ({ searchQuery, showMobileMap, setShowMobileMap, selec
     });
     resizeObserver.observe(mapRef.current);
     return () => resizeObserver.disconnect();
-  }, [mapInstanceRef.current]);
+  }, [leafletLoaded]);
 
   // Update markers
   useEffect(() => {
@@ -230,14 +383,17 @@ const BusinessesSection = ({ searchQuery, showMobileMap, setShowMobileMap, selec
     markersRef.current.forEach(marker => mapInstanceRef.current.removeLayer(marker));
     markersRef.current = [];
 
-    filteredPlaces.forEach((place, index) => {
+    filteredPlaces.forEach((place) => {
       const isSelected = selectedBusiness?.id === place.id;
       const isHovered = hoveredBusiness?.id === place.id;
 
-      const getEmoji = (cat) => {
-        if (cat.includes('Restaurant')) return '🍽️';
-        if (cat.includes('Art')) return '🎨';
-        if (cat.includes('Activities')) return '🎯';
+      const getEmoji = (slug) => {
+        if (slug === 'food-drink' || slug === 'hotel-restaurant') return '🍽️';
+        if (slug === 'accommodation') return '🛏️';
+        if (slug === 'outdoor-adventure') return '🏕️';
+        if (slug === 'tourism-attractions') return '🎯';
+        if (slug === 'retail-gifts') return '🎁';
+        if (slug === 'professional-services' || slug === 'public-services') return '🛠️';
         return '🏪';
       };
 
@@ -258,7 +414,7 @@ const BusinessesSection = ({ searchQuery, showMobileMap, setShowMobileMap, selec
           height: ${isSelected ? '48px' : '40px'};
           transform: ${isSelected ? 'scale(1.1) translateY(-4px)' : 'scale(1)'};
         ">
-          ${getEmoji(place.category)}
+          ${getEmoji(place.categorySlug)}
         </div>`;
 
       const marker = window.L.marker(place.position, {
@@ -283,16 +439,45 @@ const BusinessesSection = ({ searchQuery, showMobileMap, setShowMobileMap, selec
     }
   }, [filteredPlaces, selectedBusiness, hoveredBusiness, selectBusiness]);
 
-  // Select first place on load for map view
+  // Keep selected business aligned with live filtered data
   useEffect(() => {
-    if (showMobileMap && filteredPlaces.length > 0 && !selectedBusiness) {
-      setSelectedBusiness(filteredPlaces[0]);
-      setActiveCardIndex(0);
-    }
-  }, [showMobileMap, filteredPlaces]);
+    const timer = window.setTimeout(() => {
+      if (filteredPlaces.length === 0) {
+        setSelectedBusiness(null);
+        setActiveCardIndex(0);
+        return;
+      }
+
+      if (!selectedBusiness) {
+        setSelectedBusiness(filteredPlaces[0]);
+        setActiveCardIndex(0);
+        return;
+      }
+
+      const selectedIndex = filteredPlaces.findIndex((place) => place.id === selectedBusiness.id);
+      if (selectedIndex === -1) {
+        setSelectedBusiness(filteredPlaces[0]);
+        setActiveCardIndex(0);
+        return;
+      }
+
+      if (selectedIndex !== activeCardIndex) {
+        setActiveCardIndex(selectedIndex);
+      }
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, [filteredPlaces, selectedBusiness, activeCardIndex]);
 
   return (
     <div className="flex flex-col md:flex-row w-full h-full bg-gray-50 relative">
+      {refreshToast && (
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[1400] bg-emerald-600 text-white text-xs md:text-sm font-semibold px-4 py-2 rounded-full shadow-lg flex items-center gap-2">
+          <CheckCircle2 size={15} />
+          <span>{refreshToast}</span>
+        </div>
+      )}
+
       {/* List View - Desktop sidebar or Mobile full screen */}
       <div className={`w-full md:w-80 bg-white flex flex-col border-r border-gray-100 shadow-sm overflow-hidden ${showMobileMap ? 'hidden md:flex' : 'flex'} h-full`}>
         <div className="p-4 md:p-5 border-b border-gray-100 sticky top-0 bg-white/95 backdrop-blur-md z-10">
@@ -303,7 +488,31 @@ const BusinessesSection = ({ searchQuery, showMobileMap, setShowMobileMap, selec
         </div>
 
         <div className="flex-1 overflow-y-auto p-3 md:p-4 space-y-3">
-          {filteredPlaces.map((place, index) => (
+          {loadingPlaces && (
+            <div className="text-center py-10">
+              <div className="w-10 h-10 border-2 border-green-200 border-t-green-600 rounded-full animate-spin mx-auto mb-3" />
+              <p className="text-sm text-gray-500">Loading businesses...</p>
+            </div>
+          )}
+
+          {!loadingPlaces && placesError && (
+            <div className="text-center py-8">
+              <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <AlertCircle className="w-8 h-8 text-red-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-700 mb-1">Could not load businesses</h3>
+              <p className="text-sm text-gray-500 mb-4">{placesError}</p>
+              <button
+                type="button"
+                onClick={() => queueReload()}
+                className="px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-semibold hover:bg-green-700"
+              >
+                Retry
+              </button>
+            </div>
+          )}
+
+          {!loadingPlaces && !placesError && filteredPlaces.map((place) => (
             <div
               key={place.id}
               onClick={() => {
@@ -346,7 +555,7 @@ const BusinessesSection = ({ searchQuery, showMobileMap, setShowMobileMap, selec
                 <div className="flex items-center justify-between">
                   <div className="flex items-center text-xs text-gray-400">
                     <MapPin size={12} className="mr-1" />
-                    <span className="line-clamp-1">{place.address.split(',')[0]}</span>
+                    <span className="line-clamp-1">{(place.address || 'No address').split(',')[0]}</span>
                   </div>
                   <span className="text-xs font-bold text-green-600 flex items-center gap-1">
                     View <Navigation size={10} />
@@ -356,7 +565,7 @@ const BusinessesSection = ({ searchQuery, showMobileMap, setShowMobileMap, selec
             </div>
           ))}
 
-          {filteredPlaces.length === 0 && (
+          {!loadingPlaces && !placesError && filteredPlaces.length === 0 && (
             <div className="text-center py-12">
               <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <MapPin className="w-8 h-8 text-gray-300" />
@@ -393,7 +602,9 @@ const BusinessesSection = ({ searchQuery, showMobileMap, setShowMobileMap, selec
         <div className="absolute top-4 left-4 z-[400]">
           <div className="bg-white/95 backdrop-blur-sm px-3 py-2 rounded-xl shadow-elevated flex items-center gap-2">
             <Layers size={16} className="text-green-600" />
-            <span className="text-sm font-semibold text-gray-700">{filteredPlaces.length} places</span>
+            <span className="text-sm font-semibold text-gray-700">
+              {loadingPlaces ? 'Loading...' : `${filteredPlaces.length} places`}
+            </span>
           </div>
         </div>
 
@@ -425,7 +636,7 @@ const BusinessesSection = ({ searchQuery, showMobileMap, setShowMobileMap, selec
               className="flex gap-3 overflow-x-auto px-4 pb-2 snap-x snap-mandatory scrollbar-hide"
               style={{ scrollSnapType: 'x mandatory' }}
             >
-              {filteredPlaces.map((place, index) => (
+              {filteredPlaces.map((place) => (
                 <div
                   key={place.id}
                   onClick={() => selectBusiness(place, true)}
@@ -454,7 +665,7 @@ const BusinessesSection = ({ searchQuery, showMobileMap, setShowMobileMap, selec
                       <div className="flex items-center justify-between">
                         <span className="text-xs text-gray-400 flex items-center gap-1">
                           <MapPin size={10} />
-                          {place.address.split(',')[0]}
+                          {(place.address || 'No address').split(',')[0]}
                         </span>
                         <button
                           onClick={(e) => toggleFavorite(place.id, e)}
@@ -576,17 +787,19 @@ const BusinessesSection = ({ searchQuery, showMobileMap, setShowMobileMap, selec
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
-                    <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                      <Phone size={18} className="text-green-600" />
+                  {selectedBusiness.phone && (
+                    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                      <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <Phone size={18} className="text-green-600" />
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-400 font-medium">Phone</p>
+                        <a href={`tel:${selectedBusiness.phone}`} className="text-sm font-semibold text-green-700 hover:underline">
+                          {selectedBusiness.phone}
+                        </a>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-xs text-gray-400 font-medium">Phone</p>
-                      <a href={`tel:${selectedBusiness.phone}`} className="text-sm font-semibold text-green-700 hover:underline">
-                        {selectedBusiness.phone}
-                      </a>
-                    </div>
-                  </div>
+                  )}
 
                   {selectedBusiness.website && (
                     <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">

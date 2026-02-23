@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 500" role="img" aria-labelledby="title desc">
+  <title id="title">Dullstroom Digital Hero Banner</title>
+  <desc id="desc">Landscape banner with Dullstroom Digital heading and tagline.</desc>
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#3f88da" />
+      <stop offset="48%" stop-color="#8db8ef" />
+      <stop offset="100%" stop-color="#f2d6b6" />
+    </linearGradient>
+    <linearGradient id="water" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#6f9fc7" />
+      <stop offset="100%" stop-color="#304d69" />
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#102a43" flood-opacity="0.35" />
+    </filter>
+  </defs>
+
+  <rect width="1600" height="500" fill="url(#sky)" />
+
+  <path d="M0 222c120 36 276 58 430 44 194-18 278-95 443-95 177 0 264 60 434 88 120 20 209 12 293-16V500H0z" fill="#5f7f54" opacity="0.72" />
+  <path d="M0 282c210-40 370-24 570 6 175 26 306 38 471 20 190-22 292-44 559-20V500H0z" fill="#3d5f48" opacity="0.86" />
+  <rect y="312" width="1600" height="188" fill="url(#water)" />
+  <path d="M0 358c145 26 316 30 510 7 180-22 282-24 467-6 202 20 375 22 623-4v145H0z" fill="#223d56" opacity="0.58" />
+
+  <g filter="url(#shadow)">
+    <rect x="240" y="46" width="1100" height="92" rx="18" fill="#123f78" opacity="0.92" />
+    <text
+      x="300"
+      y="108"
+      fill="#f8efe4"
+      font-family="'Sora', 'Montserrat', sans-serif"
+      font-size="78"
+      font-weight="800"
+      letter-spacing="-1"
+    >
+      Dullstroom Digital
+    </text>
+
+    <rect x="250" y="152" width="1040" height="74" rx="18" fill="#113767" opacity="0.92" />
+    <text
+      x="288"
+      y="202"
+      fill="#f8efe4"
+      font-family="'Sora', 'Montserrat', sans-serif"
+      font-size="54"
+      font-weight="700"
+      letter-spacing="0.5"
+    >
+      Building a Modern Digital Heart for Our Town
+    </text>
+  </g>
+
+  <g transform="translate(1364 58)" filter="url(#shadow)">
+    <circle cx="58" cy="58" r="46" fill="#f0822d" />
+    <circle cx="58" cy="58" r="22" fill="#f8efe4" />
+    <path d="M58 146c-18-24-52-55-52-87a52 52 0 0 1 104 0c0 32-34 63-52 87Z" fill="#f0822d" />
+  </g>
+
+  <g opacity="0.24">
+    <ellipse cx="350" cy="306" rx="180" ry="20" fill="#ffffff" />
+    <ellipse cx="1100" cy="336" rx="220" ry="22" fill="#ffffff" />
+  </g>
+</svg>

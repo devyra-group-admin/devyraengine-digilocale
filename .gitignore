@@ -125,3 +125,7 @@ dist
 .DS_Store
 Thumbs.db
 .vercel
+
+# Local Supabase diagnostics/scratch files
+supabase_status.json
+supabase/snippets/

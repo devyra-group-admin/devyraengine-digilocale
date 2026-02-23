@@ -1,36 +1,37 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-  Search, Menu, MapPin, Star, Phone, Navigation, Globe, X, ZoomIn, ZoomOut,
-  MessageCircle, ThumbsUp, MoreVertical, Plus, Calendar, ShoppingBag, Briefcase,
-  AlertCircle, Fish, Wrench, Users, Bell, User, Cloud, Sun, MapPinned,
-  Home, Utensils, Palette, TreePine, Coffee, ChevronRight, Sparkles
+  Search, Menu, MapPin, Calendar, Briefcase, Users, Bell, Sun, MapPinned,
+  Home, Utensils, Palette, TreePine, Coffee, ChevronRight, Sparkles, Shield
 } from 'lucide-react';
 import BookingsSection from './components/BookingsSection';
 import { getAccommodations } from './services/accommodationService';
-import { communityEvents, eventCategories } from './data/communityEvents';
-import { communityBoards, communityPosts } from './data/communityBoards';
 import CommunitySection from './components/CommunitySection';
 import BusinessesSection from './components/BusinessesSection';
+import BusinessOwnerPortal from './components/BusinessOwnerPortal';
 import AdminPanel from './components/AdminPanel';
+import { supabase } from './services/supabaseClient';
+import useTownBranding from './hooks/useTownBranding';
 
 const App = () => {
+  const { branding, townSlug } = useTownBranding();
+
   // View Mode State
   const [viewMode, setViewMode] = useState('businesses');
   const [showMobileMap, setShowMobileMap] = useState(true);
   const [accommodations, setAccommodations] = useState([]);
   const [selectedAccommodation, setSelectedAccommodation] = useState(null);
-  const [selectedEventCategory, setSelectedEventCategory] = useState(null);
-  const [selectedBoard, setSelectedBoard] = useState('local-events');
   const [checkInDate, setCheckInDate] = useState('');
   const [checkOutDate, setCheckOutDate] = useState('');
   const [guests, setGuests] = useState({ adults: 2, children: 0 });
   const [showGuestSelector, setShowGuestSelector] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [authSession, setAuthSession] = useState(null);
+  const [userRole, setUserRole] = useState(null);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   // Original Business State
-  const [selectedBusiness, setSelectedBusiness] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [bookingsSearchQuery, setBookingsSearchQuery] = useState('');
   const [communitySearchQuery, setCommunitySearchQuery] = useState('');
@@ -45,6 +46,11 @@ const App = () => {
   ];
 
   const unreadCount = notifications.filter(n => n.unread).length;
+  const canAccessAdmin = Boolean(authSession?.user) && (isSuperAdmin || userRole === 'admin');
+  const userLabel = authSession?.user?.email
+    ? authSession.user.email.split('@')[0]
+    : 'Guest';
+  const userInitial = userLabel.charAt(0).toUpperCase();
 
   // Categories for quick filters
   const categories = [
@@ -60,8 +66,56 @@ const App = () => {
     { id: 'businesses', label: 'Explore', icon: MapPinned, badge: null },
     { id: 'community', label: 'Community', icon: Users, badge: 3 },
     { id: 'bookings', label: 'Bookings', icon: Calendar, badge: null },
-    { id: 'admin', label: 'Admin', icon: MoreVertical, badge: null },
+    ...(canAccessAdmin ? [{ id: 'admin', label: 'Admin', icon: Shield, badge: null }] : []),
+    { id: 'owner', label: 'My Business', icon: Briefcase, badge: null },
   ];
+
+  useEffect(() => {
+    let isActive = true;
+
+    const loadProfile = async (userId) => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('role,is_super_admin')
+        .eq('id', userId)
+        .maybeSingle();
+
+      if (!isActive) return;
+      setUserRole(data?.role || null);
+      setIsSuperAdmin(Boolean(data?.is_super_admin));
+    };
+
+    const bootstrap = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (!isActive) return;
+      const currentSession = data.session ?? null;
+      setAuthSession(currentSession);
+      if (currentSession?.user?.id) {
+        await loadProfile(currentSession.user.id);
+      } else {
+        setUserRole(null);
+        setIsSuperAdmin(false);
+      }
+    };
+
+    void bootstrap();
+
+    const { data: subscription } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      if (!isActive) return;
+      setAuthSession(nextSession);
+      if (nextSession?.user?.id) {
+        void loadProfile(nextSession.user.id);
+      } else {
+        setUserRole(null);
+        setIsSuperAdmin(false);
+      }
+    });
+
+    return () => {
+      isActive = false;
+      subscription.subscription.unsubscribe();
+    };
+  }, []);
 
   // Set default booking dates
   // Set default booking dates and fetch accommodations
@@ -88,23 +142,31 @@ const App = () => {
   }, []);
 
   return (
-    <div className="h-screen flex flex-col bg-gradient-to-br from-gray-50 to-stone-100 overflow-hidden">
+    <div
+      className="h-screen flex flex-col overflow-hidden"
+      style={{
+        background: `linear-gradient(135deg, #f5f1e8 0%, ${branding.primaryColor}12 55%, ${branding.secondaryColor}1a 100%)`,
+      }}
+    >
       {/* Header - Premium Design */}
       <header className="flex-none z-50">
         {/* Top Bar - Desktop Only */}
-        <div className="hidden md:flex items-center justify-between px-6 py-2 bg-gradient-to-r from-green-900 via-green-800 to-green-900 text-white text-xs">
+        <div
+          className="hidden md:flex items-center justify-between px-6 py-2 text-white text-xs"
+          style={{ background: `linear-gradient(90deg, ${branding.primaryColor} 0%, ${branding.primaryColor} 52%, ${branding.secondaryColor} 100%)` }}
+        >
           <div className="flex items-center gap-6">
-            <span className="flex items-center gap-1.5 text-green-100">
+            <span className="flex items-center gap-1.5 text-[#d9e6d9]">
               <MapPin size={12} />
-              Mpumalanga, South Africa
+              {branding.locationLabel}
             </span>
             <span className="flex items-center gap-1.5">
-              <Sun size={12} className="text-amber-400" />
-              <span className="text-green-100">{weather.temp}°C</span>
-              <span className="text-green-300">Sunny</span>
+              <Sun size={12} style={{ color: branding.accentColor }} />
+              <span className="text-[#d9e6d9]">{weather.temp}°C</span>
+              <span className="text-[#b8d3f5]">Sunny</span>
             </span>
           </div>
-          <div className="flex items-center gap-6 text-green-200">
+          <div className="flex items-center gap-6 text-[#d7e5f8]">
             <a href="#" className="hover:text-white transition-colors">About Dullstroom</a>
             <a href="#" className="hover:text-white transition-colors">Contact</a>
             <a href="#" className="hover:text-white transition-colors">Help</a>
@@ -112,38 +174,26 @@ const App = () => {
         </div>
 
         {/* Main Header */}
-        <div className="bg-white/95 backdrop-blur-xl shadow-soft border-b border-gray-100">
+        <div className="bg-white/95 backdrop-blur-xl shadow-soft border-b border-[#e6e0d6]">
           <div className="px-4 md:px-6 py-3 md:py-4">
             <div className="flex items-center justify-between">
               {/* Logo */}
-              <div className="flex items-center gap-3">
-                {/* Logo Icon */}
-                <div className="relative">
-                  <div className="w-11 h-11 md:w-12 md:h-12 bg-gradient-to-br from-green-600 via-green-700 to-green-800 rounded-2xl flex items-center justify-center shadow-lg transform -rotate-3 hover:rotate-0 transition-transform">
-                    <svg viewBox="0 0 24 24" className="w-6 h-6 md:w-7 md:h-7 text-white" fill="none" stroke="currentColor" strokeWidth="1.5">
-                      <path d="M12 2L2 7l10 5 10-5-10-5z" strokeLinecap="round" strokeLinejoin="round"/>
-                      <path d="M2 17l10 5 10-5" strokeLinecap="round" strokeLinejoin="round"/>
-                      <path d="M2 12l10 5 10-5" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </div>
-                  {/* Accent dot */}
-                  <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-amber-500 rounded-full border-2 border-white" />
+              <div className="flex items-center gap-3 md:gap-4 min-w-0">
+                <div className="shrink-0">
+                  <img
+                    src={branding.logoUrl}
+                    alt={`${branding.townName} ${branding.appName}`}
+                    className="w-11 h-11 md:w-12 md:h-12 rounded-2xl shadow-md border border-[#2f4a2f]/20"
+                  />
                 </div>
 
-                {/* Logo Text */}
-                <div className="flex flex-col">
-                  <h1 className="text-xl md:text-2xl font-bold text-gray-900 tracking-tight leading-none flex items-baseline gap-1">
-                    <span className="bg-gradient-to-r from-green-700 to-green-600 bg-clip-text text-transparent">
-                      Dullstroom
-                    </span>
+                <div className="min-w-0">
+                  <h1 className="text-xl md:text-2xl font-extrabold tracking-tight leading-none text-[#1f2f1f]">
+                    {branding.townName} <span style={{ color: branding.accentColor }}>{branding.appName}</span>
                   </h1>
-                  <div className="flex items-center gap-1.5 mt-0.5">
-                    <div className="h-px w-4 bg-gradient-to-r from-amber-500 to-transparent" />
-                    <span className="text-[10px] md:text-[11px] text-amber-600 font-semibold tracking-wide uppercase">
-                      Digital Guide
-                    </span>
-                    <div className="h-px w-4 bg-gradient-to-l from-amber-500 to-transparent" />
-                  </div>
+                  <p className="hidden sm:block text-[10px] md:text-[11px] text-[#355681] font-semibold tracking-wide uppercase mt-1 truncate">
+                    {branding.tagline}
+                  </p>
                 </div>
               </div>
 
@@ -201,9 +251,9 @@ const App = () => {
               {/* User Profile */}
               <button className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-gray-100 transition-colors">
                 <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                  G
+                  {userInitial}
                 </div>
-                <span className="text-sm font-medium text-gray-700 hidden lg:block">Guest</span>
+                <span className="text-sm font-medium text-gray-700 hidden lg:block">{userLabel}</span>
               </button>
             </div>
 
@@ -218,7 +268,7 @@ const App = () => {
                 )}
               </button>
               <button className="w-8 h-8 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                G
+                {userInitial}
               </button>
             </div>
           </div>
@@ -371,6 +421,7 @@ const App = () => {
             showMobileMap={showMobileMap}
             setShowMobileMap={setShowMobileMap}
             selectedCategory={selectedCategory}
+            branding={branding}
           />
         )}
 
@@ -397,8 +448,30 @@ const App = () => {
           />
         )}
 
-        {viewMode === 'admin' && (
-          <AdminPanel />
+        {viewMode === 'owner' && (
+          <BusinessOwnerPortal branding={branding} />
+        )}
+
+        {viewMode === 'admin' && canAccessAdmin && (
+          <AdminPanel townSlug={townSlug} branding={branding} />
+        )}
+
+        {viewMode === 'admin' && !canAccessAdmin && (
+          <div className="w-full p-6 md:p-10">
+            <div className="max-w-xl mx-auto bg-white rounded-2xl border border-red-200 shadow-sm p-6">
+              <h2 className="text-xl font-bold text-gray-900">Restricted Area</h2>
+              <p className="text-sm text-gray-600 mt-2">
+                The admin dashboard is only available to authorized super users.
+              </p>
+              <button
+                type="button"
+                onClick={() => setViewMode('businesses')}
+                className="mt-4 inline-flex items-center justify-center rounded-lg bg-green-600 hover:bg-green-700 text-white px-4 py-2 text-sm font-semibold"
+              >
+                Back to Explore
+              </button>
+            </div>
+          </div>
         )}
       </div>
 
@@ -408,7 +481,8 @@ const App = () => {
           { id: 'businesses', label: 'Explore', icon: MapPinned },
           { id: 'community', label: 'Community', icon: Users, badge: 3 },
           { id: 'bookings', label: 'Stay', icon: Calendar },
-          { id: 'admin', label: 'More', icon: MoreVertical },
+          ...(canAccessAdmin ? [{ id: 'admin', label: 'Admin', icon: Shield }] : []),
+          { id: 'owner', label: 'Manage', icon: Briefcase },
         ].map((item) => {
           const Icon = item.icon;
           const isActive = viewMode === item.id;
