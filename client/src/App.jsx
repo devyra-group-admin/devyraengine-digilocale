@@ -13,8 +13,14 @@ import AdminPanel from './components/AdminPanel';
 import { supabase } from './services/supabaseClient';
 import useTownBranding from './hooks/useTownBranding';
 
+const isFeatureEnabled = (value, defaultValue = false) => {
+  if (value === undefined || value === null || value === '') return defaultValue;
+  return ['1', 'true', 'yes', 'on'].includes(String(value).trim().toLowerCase());
+};
+
 const App = () => {
   const { branding, townSlug } = useTownBranding();
+  const isBookingsEnabled = isFeatureEnabled(import.meta.env.VITE_FEATURE_BOOKINGS, false);
 
   // View Mode State
   const [viewMode, setViewMode] = useState('businesses');
@@ -35,6 +41,20 @@ const App = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [bookingsSearchQuery, setBookingsSearchQuery] = useState('');
   const [communitySearchQuery, setCommunitySearchQuery] = useState('');
+  const isBookingsComingSoon = viewMode === 'bookings' && !isBookingsEnabled;
+  const searchPlaceholder = isBookingsComingSoon
+    ? 'Bookings coming soon'
+    : `Search ${viewMode === 'businesses' ? 'places' : viewMode === 'bookings' ? 'stays' : 'posts'}...`;
+  const activeSearchValue = viewMode === 'businesses'
+    ? searchQuery
+    : viewMode === 'bookings'
+      ? bookingsSearchQuery
+      : communitySearchQuery;
+  const handleSearchChange = (value) => {
+    if (viewMode === 'businesses') setSearchQuery(value);
+    else if (viewMode === 'bookings') setBookingsSearchQuery(value);
+    else setCommunitySearchQuery(value);
+  };
 
   // Mock weather data
   const weather = { temp: 18, condition: 'sunny', icon: Sun };
@@ -65,7 +85,7 @@ const App = () => {
   const navItems = [
     { id: 'businesses', label: 'Explore', icon: MapPinned, badge: null },
     { id: 'community', label: 'Community', icon: Users, badge: 3 },
-    { id: 'bookings', label: 'Bookings', icon: Calendar, badge: null },
+    { id: 'bookings', label: 'Bookings', icon: Calendar, badge: isBookingsEnabled ? null : 'Soon', isSoon: !isBookingsEnabled },
     ...(canAccessAdmin ? [{ id: 'admin', label: 'Admin', icon: Shield, badge: null }] : []),
     { id: 'owner', label: 'My Business', icon: Briefcase, badge: null },
   ];
@@ -117,9 +137,10 @@ const App = () => {
     };
   }, []);
 
-  // Set default booking dates
-  // Set default booking dates and fetch accommodations
+  // Load bookings data only when bookings are enabled.
   useEffect(() => {
+    if (!isBookingsEnabled) return;
+
     const today = new Date();
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -139,7 +160,7 @@ const App = () => {
     };
 
     fetchData();
-  }, []);
+  }, [isBookingsEnabled]);
 
   return (
     <div
@@ -204,14 +225,11 @@ const App = () => {
                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                 <input
                   type="text"
-                  placeholder={`Search ${viewMode === 'businesses' ? 'places' : viewMode === 'bookings' ? 'stays' : 'posts'}...`}
-                  className="w-72 pl-10 pr-4 py-2.5 text-sm border border-gray-200 rounded-xl bg-gray-50/50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:bg-white transition-all placeholder:text-gray-400"
-                  value={viewMode === 'businesses' ? searchQuery : viewMode === 'bookings' ? bookingsSearchQuery : communitySearchQuery}
-                  onChange={(e) => {
-                    if (viewMode === 'businesses') setSearchQuery(e.target.value);
-                    else if (viewMode === 'bookings') setBookingsSearchQuery(e.target.value);
-                    else setCommunitySearchQuery(e.target.value);
-                  }}
+                  placeholder={searchPlaceholder}
+                  className="w-72 pl-10 pr-4 py-2.5 text-sm border border-gray-200 rounded-xl bg-gray-50/50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:bg-white transition-all placeholder:text-gray-400 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
+                  value={activeSearchValue}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  disabled={isBookingsComingSoon}
                 />
               </div>
 
@@ -291,7 +309,9 @@ const App = () => {
                   <Icon size={18} strokeWidth={isActive ? 2.5 : 2} />
                   <span>{item.label}</span>
                   {item.badge && (
-                    <span className="ml-1 px-1.5 py-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full">
+                    <span className={`ml-1 px-1.5 py-0.5 text-[10px] font-bold rounded-full ${
+                      item.isSoon ? 'bg-amber-100 text-amber-700 border border-amber-200' : 'bg-red-500 text-white'
+                    }`}>
                       {item.badge}
                     </span>
                   )}
@@ -307,14 +327,11 @@ const App = () => {
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
               <input
                 type="text"
-                placeholder={`Search ${viewMode === 'businesses' ? 'places' : viewMode === 'bookings' ? 'stays' : 'posts'}...`}
-                className="w-full pl-11 pr-4 py-3 text-sm border border-gray-200 rounded-2xl bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all shadow-soft placeholder:text-gray-400"
-                value={viewMode === 'businesses' ? searchQuery : viewMode === 'bookings' ? bookingsSearchQuery : communitySearchQuery}
-                onChange={(e) => {
-                  if (viewMode === 'businesses') setSearchQuery(e.target.value);
-                  else if (viewMode === 'bookings') setBookingsSearchQuery(e.target.value);
-                  else setCommunitySearchQuery(e.target.value);
-                }}
+                placeholder={searchPlaceholder}
+                className="w-full pl-11 pr-4 py-3 text-sm border border-gray-200 rounded-2xl bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all shadow-soft placeholder:text-gray-400 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
+                value={activeSearchValue}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                disabled={isBookingsComingSoon}
               />
             </div>
 
@@ -343,7 +360,7 @@ const App = () => {
             )}
 
             {/* Map/List Toggle */}
-            {(viewMode === 'businesses' || viewMode === 'bookings') && (
+            {(viewMode === 'businesses' || (viewMode === 'bookings' && isBookingsEnabled)) && (
               <div className="flex bg-gray-100/80 p-1 rounded-2xl self-center w-fit mx-auto shadow-inner-soft">
                 <button
                   onClick={() => setShowMobileMap(false)}
@@ -429,7 +446,7 @@ const App = () => {
           <CommunitySection searchQuery={communitySearchQuery} />
         )}
 
-        {viewMode === 'bookings' && (
+        {viewMode === 'bookings' && isBookingsEnabled && (
           <BookingsSection
             searchQuery={bookingsSearchQuery}
             accommodations={accommodations}
@@ -446,6 +463,36 @@ const App = () => {
             showMobileMap={showMobileMap}
             setShowMobileMap={setShowMobileMap}
           />
+        )}
+
+        {viewMode === 'bookings' && !isBookingsEnabled && (
+          <div className="w-full p-6 md:p-10">
+            <div className="max-w-2xl mx-auto bg-white rounded-2xl border border-amber-200 shadow-sm p-6 md:p-8">
+              <span className="inline-flex items-center rounded-full bg-amber-100 text-amber-800 border border-amber-200 px-3 py-1 text-xs font-semibold">
+                Coming Soon
+              </span>
+              <h2 className="mt-4 text-2xl font-bold text-gray-900">Bookings launch in a later release</h2>
+              <p className="text-sm text-gray-600 mt-2">
+                We are still finalizing availability, confirmations, and host workflows before opening bookings.
+              </p>
+              <div className="mt-6 flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={() => setViewMode('businesses')}
+                  className="inline-flex items-center justify-center rounded-lg bg-green-600 hover:bg-green-700 text-white px-4 py-2 text-sm font-semibold"
+                >
+                  Back to Explore
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode('community')}
+                  className="inline-flex items-center justify-center rounded-lg bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-4 py-2 text-sm font-semibold"
+                >
+                  Go to Community
+                </button>
+              </div>
+            </div>
+          </div>
         )}
 
         {viewMode === 'owner' && (
@@ -480,7 +527,7 @@ const App = () => {
         {[
           { id: 'businesses', label: 'Explore', icon: MapPinned },
           { id: 'community', label: 'Community', icon: Users, badge: 3 },
-          { id: 'bookings', label: 'Stay', icon: Calendar },
+          { id: 'bookings', label: 'Stay', icon: Calendar, badge: isBookingsEnabled ? null : 'Soon', isSoon: !isBookingsEnabled },
           ...(canAccessAdmin ? [{ id: 'admin', label: 'Admin', icon: Shield }] : []),
           { id: 'owner', label: 'Manage', icon: Briefcase },
         ].map((item) => {
@@ -506,7 +553,9 @@ const App = () => {
                   className={`transition-all duration-300 ${isActive ? 'text-green-700' : ''}`}
                 />
                 {item.badge && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                  <span className={`absolute -top-1 -right-1 min-w-4 h-4 px-1 ${
+                    item.isSoon ? 'bg-amber-100 text-amber-700 border border-amber-200' : 'bg-red-500 text-white'
+                  } text-[9px] font-bold rounded-full flex items-center justify-center`}>
                     {item.badge}
                   </span>
                 )}
