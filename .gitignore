@@ -129,3 +129,5 @@ Thumbs.db
 # Local Supabase diagnostics/scratch files
 supabase_status.json
 supabase/snippets/
+
+.vercel
